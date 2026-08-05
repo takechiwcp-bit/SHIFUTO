@@ -1,0 +1,208 @@
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Mochiy+Pop+One&display=swap');
+
+:root {
+  /* Manga / Pop Colors */
+  --bg-color: #fce762; /* bright yellow */
+  --text-color: #000000; /* bold black */
+  --text-muted: #333333;
+  --primary-color: #3b82f6; /* bright blue */
+  --primary-hover: #2563eb;
+  --accent-color: #ec4899; /* bold pink */
+  --danger-color: #ef4444; /* bright red */
+  --warning-color: #f97316; /* bright orange */
+  --success-color: #10b981; /* bright green */
+  --surface-bg: #ffffff;
+  --surface-border: #000000;
+  --surface-hover: #e0e7ff;
+  
+  /* RGB values for rgba */
+  --surface-bg-rgb: 255, 255, 255;
+  
+  /* Fonts */
+  --font-family: 'Mochiy Pop One', 'M PLUS Rounded 1c', system-ui, -apple-system, sans-serif;
+  
+  /* Layout: Neo-brutalism */
+  --border-width: 3px;
+  --border-radius: 8px;
+  --border-radius-sm: 4px;
+  --shadow-sm: 3px 3px 0 #000;
+  --shadow-md: 5px 5px 0 #000;
+  --shadow-lg: 8px 8px 0 #000;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Halftone background effect */
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  background-image: radial-gradient(rgba(0,0,0,0.15) 2px, transparent 2px);
+  background-size: 20px 20px;
+  color: var(--text-color);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Card / Glass replacement */
+.glass, .card {
+  background-color: var(--surface-bg);
+  border: var(--border-width) solid var(--surface-border);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: var(--border-radius-sm);
+  border: var(--border-width) solid #000;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 #000;
+}
+
+.btn-secondary {
+  background-color: white;
+  color: var(--text-color);
+}
+
+.btn-secondary:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 #000;
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+.btn-danger:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 #000;
+}
+
+/* Inputs */
+.input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: var(--font-family);
+  border: var(--border-width) solid var(--surface-border);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--surface-bg);
+  color: var(--text-color);
+  box-shadow: inset 0 0 0 #000;
+  transition: box-shadow 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 3px var(--primary-color);
+}
+
+.label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  color: var(--text-color);
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+/* Animations */
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Layout Utilities */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.tab {
+  background: white;
+  border: var(--border-width) solid #000;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 0.5rem 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.1s ease;
+}
+
+.tab:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 #000;
+}
+
+.tab.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* Grid layout for App */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white;
+    background-image: none;
+  }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+  }
+}
