@@ -190,7 +190,7 @@ body {
 /* Grid layout for App */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 1fr 350px;
   gap: 1.5rem;
   align-items: start;
 }
