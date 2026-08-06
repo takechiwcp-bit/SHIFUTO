@@ -210,37 +210,44 @@ export const useAppStore = () => {
     const isAvailable = (staffId: string, timeSlot: string) => {
       const staff = staffList.find(s => s.id === staffId);
       if (!staff) return false;
-      return timeSlot >= staff.availableStart && timeSlot < staff.availableEnd;
+      const start = staff.availableStart || eventConfig.startTime;
+      const end = staff.availableEnd || eventConfig.endTime;
+      return timeSlot >= start && timeSlot < end;
     };
     
     for (const time of slots) {
        const workingThisSlot = new Set(newShifts.filter(s => s.timeSlot === time).map(s => s.staffId));
        
-       const activePositions = positions.filter(p => time >= p.startTime && time < p.endTime);
+       const activePositions = positions.filter(p => {
+          const start = p.startTime || eventConfig.startTime;
+          const end = p.endTime || eventConfig.endTime;
+          return time >= start && time < end;
+       });
        
        for (const pass of [1, 2]) {
          for (const pos of activePositions) {
             const currentAssigned = newShifts.filter(s => s.timeSlot === time && s.positionId === pos.id).length;
-            const needed = (pos.requiredCount || 1) - currentAssigned;
+            const needed = (Number(pos.requiredCount) || 1) - currentAssigned;
             
             if (needed > 0) {
               let candidates = staffList.filter(s => {
                  if (!isAvailable(s.id, time)) return false;
                  if (workingThisSlot.has(s.id)) return false;
-                 if (continuousMinutes[s.id] + eventConfig.intervalMinutes > eventConfig.maxContinuousWorkMinutes) return false;
                  
+                 const maxMins = Number(eventConfig.maxContinuousWorkMinutes) || 240;
+                 if (continuousMinutes[s.id] + Number(eventConfig.intervalMinutes) > maxMins) return false;
+                 
+                 const notes = s.notes || '';
                  const cat = categories.find(c => c.id === pos.categoryId);
-                 const mentionsThis = s.notes.includes(pos.name) || (cat && s.notes.includes(cat.name));
-                 const mentionsOtherPos = positions.some(p => s.notes.includes(p.name));
-                 const mentionsOtherCat = categories.some(c => s.notes.includes(c.name));
+                 
+                 const mentionsThis = (pos.name && notes.includes(pos.name)) || (cat && cat.name && notes.includes(cat.name));
+                 const mentionsOtherPos = positions.some(p => p.name && p.id !== pos.id && notes.includes(p.name));
+                 const mentionsOtherCat = categories.some(c => c.name && (!cat || c.id !== cat.id) && notes.includes(c.name));
                  const mentionsAny = mentionsOtherPos || mentionsOtherCat;
                  
                  if (pass === 1) {
-                   // Pass 1: このポジション/カテゴリーを希望している人のみ
                    return mentionsThis;
                  } else {
-                   // Pass 2: 何も希望を書いていない人（フリーな人）のみ。
-                   // 他のポジションを希望している人は、ここには割り当てない（希望を尊重する）
                    return !mentionsAny;
                  }
               });

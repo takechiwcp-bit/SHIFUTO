@@ -31,7 +31,9 @@ export default function ShiftGrid({ store }: Props) {
   // Helper to check if a position is active at a given time
   const isPositionActiveAt = (pos: typeof positions[0], timeSlot: string) => {
     // Basic string comparison works for HH:mm format
-    return timeSlot >= pos.startTime && timeSlot < pos.endTime;
+    const start = pos.startTime || eventConfig.startTime;
+    const end = pos.endTime || eventConfig.endTime;
+    return timeSlot >= start && timeSlot < end;
   };
   
   const handleAssign = (staffId: string, timeSlot: string, positionId: string) => {
@@ -47,7 +49,9 @@ export default function ShiftGrid({ store }: Props) {
   const isAvailable = (staffId: string, timeSlot: string) => {
     const staff = staffList.find(s => s.id === staffId);
     if (!staff) return false;
-    return timeSlot >= staff.availableStart && timeSlot < staff.availableEnd;
+    const start = staff.availableStart || eventConfig.startTime;
+    const end = staff.availableEnd || eventConfig.endTime;
+    return timeSlot >= start && timeSlot < end;
   };
 
   return (
@@ -157,6 +161,39 @@ export default function ShiftGrid({ store }: Props) {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <th colSpan={timeSlots.length + 1} style={{ padding: '1rem 0.75rem', background: 'var(--surface-bg)', textAlign: 'left', borderBottom: '2px solid var(--surface-border)' }}>
+                  📊 【ポジション別の不足人数チェック】
+                </th>
+              </tr>
+              {positions.map(pos => (
+                <tr key={`shortage-${pos.id}`}>
+                  <td style={{ position: 'sticky', left: 0, zIndex: 10, background: 'var(--surface-bg)', padding: '0.75rem', fontWeight: 500, borderRight: '1px solid var(--surface-border)', borderBottom: '1px solid var(--surface-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: pos.color }}></div>
+                      <span style={{ fontSize: '0.875rem' }}>{pos.name}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>(必要: {pos.requiredCount || 1}名)</span>
+                    </div>
+                  </td>
+                  {timeSlots.map(time => {
+                    const active = isPositionActiveAt(pos, time);
+                    if (!active) {
+                      return <td key={time} style={{ padding: '0.25rem', textAlign: 'center', borderBottom: '1px solid var(--surface-border)', background: 'var(--surface-hover)' }}><span style={{ color: 'var(--surface-border)' }}>-</span></td>;
+                    }
+                    
+                    const currentAssigned = shifts.filter(s => s.timeSlot === time && s.positionId === pos.id).length;
+                    const shortage = Math.max(0, (Number(pos.requiredCount) || 1) - currentAssigned);
+                    
+                    return (
+                      <td key={time} style={{ padding: '0.5rem', textAlign: 'center', borderBottom: '1px solid var(--surface-border)', fontSize: '0.75rem', fontWeight: shortage > 0 ? 'bold' : 'normal', color: shortage > 0 ? 'var(--danger-color)' : 'var(--success-color)' }}>
+                        {shortage > 0 ? `不足 ${shortage}名` : 'OK'}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tfoot>
           </table>
         </div>
       )}
