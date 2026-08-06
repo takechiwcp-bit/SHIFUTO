@@ -19,19 +19,10 @@ function App() {
     syncStatusRef.current = store.syncStatus;
   }, [store.syncStatus]);
 
-  // 初回読み込み時にクラウドから自動でデータを取ってくる＆定期更新
+  // 初回読み込み時にクラウドからデータを取得
   useEffect(() => {
     if (WEBHOOK_URL) {
       store.loadFromCloud();
-      
-      const interval = setInterval(() => {
-        // 保存中でなければ定期的にクラウドから最新データを取得
-        if (syncStatusRef.current !== 'saving') {
-          store.loadFromCloud();
-        }
-      }, 10000); // 10秒ごとに取得
-      
-      return () => clearInterval(interval);
     }
   }, []);
 
