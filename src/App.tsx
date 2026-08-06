@@ -31,7 +31,7 @@ function App() {
   }, [store.syncStatus]);
 
   const handleCreateNew = () => {
-    store.resetData();
+    store.createNewEvent();
     setAppMode('wizard');
   };
 
@@ -75,7 +75,7 @@ function App() {
               alert("データベース設定が完了していません");
               return;
             }
-            await store.loadFromCloud();
+            await store.loadFromCloud(true);
             alert("クラウドから最新のデータを読み込みました！");
           }}>
             <CloudDownload size={32} />
@@ -83,11 +83,29 @@ function App() {
           </button>
         </div>
         
-        {store.isEventLoaded && (
-          <div style={{ marginTop: '3rem' }}>
-            <button className="btn btn-secondary" onClick={() => setAppMode('main')}>
-              前回の作業データから再開する
-            </button>
+        
+        {store.eventsList.length > 0 && (
+          <div style={{ marginTop: '3rem', width: '100%', textAlign: 'left' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>保存されているイベント</h2>
+            <div style={{ display: 'grid', gap: '1rem' }}>
+              {[...store.eventsList].sort((a, b) => b.lastUpdated - a.lastUpdated).map(ev => (
+                <div key={ev.id} className="card glass" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', cursor: 'pointer', transition: 'all 0.2s', border: '1px solid transparent' }} 
+                     onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--primary-color)'}
+                     onMouseOut={(e) => e.currentTarget.style.borderColor = 'transparent'}
+                     onClick={() => {
+                  store.loadEvent(ev.id);
+                  setAppMode('main');
+                }}>
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>{ev.eventConfig.name}</div>
+                    <div className="text-muted" style={{ fontSize: '0.875rem' }}>
+                      {ev.eventConfig.date} | スタッフ {ev.staffList?.length || 0}名
+                    </div>
+                  </div>
+                  <button className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>編集する</button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -145,11 +163,10 @@ function App() {
           </button>
           
           <button className="btn btn-secondary" style={{ color: 'var(--danger-color)' }} onClick={() => {
-            if(window.confirm('ダッシュボードに戻りますか？未保存の変更は「前回の作業データ」として残りますが、ファイル保存をお勧めします。')) {
-              setAppMode('dashboard');
-            }
+            store.resetData();
+            setAppMode('dashboard');
           }}>
-            <LogOut size={18} /> 終了
+            <LogOut size={18} /> 閉じる
           </button>
         </div>
       </header>

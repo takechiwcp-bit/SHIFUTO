@@ -35,3 +35,13 @@ export interface EventConfig {
   intervalMinutes: number;
   maxContinuousWorkMinutes: number;
 }
+
+export interface ShiftEvent {
+  id: string;
+  eventConfig: EventConfig;
+  categories: Category[];
+  positions: Position[];
+  staffList: Staff[];
+  shifts: ShiftEntry[];
+  lastUpdated: number;
+}
