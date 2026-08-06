@@ -44,8 +44,12 @@ export const useAppStore = () => {
   });
 
   const [isEventLoaded, setIsEventLoaded] = useState(() => {
-    return localStorage.getItem('shift_eventConfig') !== null;
+    return localStorage.getItem('shift_eventLoaded') !== null;
   });
+
+  const [lastUpdated, setLastUpdated] = useState<number>(Date.now());
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [isRemoteUpdate, setIsRemoteUpdate] = useState(false);
 
   // Save to local storage
   useEffect(() => { localStorage.setItem('shift_eventConfig', JSON.stringify(eventConfig)); }, [eventConfig]);
@@ -54,6 +58,22 @@ export const useAppStore = () => {
   useEffect(() => { localStorage.setItem('shift_staffList', JSON.stringify(staffList)); }, [staffList]);
   useEffect(() => { localStorage.setItem('shift_shifts', JSON.stringify(shifts)); }, [shifts]);
   useEffect(() => { if(isEventLoaded) localStorage.setItem('shift_eventLoaded', 'true'); }, [isEventLoaded]);
+
+  // Auto-sync to cloud when local data changes
+  useEffect(() => {
+    if (!WEBHOOK_URL || !isEventLoaded) return;
+    if (isRemoteUpdate) {
+      setIsRemoteUpdate(false);
+      return;
+    }
+    
+    setSyncStatus('saving');
+    const timer = setTimeout(() => {
+      syncToCloud();
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, [eventConfig, categories, positions, staffList, shifts]);
 
   const exportToFile = () => {
     const data = {
@@ -106,16 +126,16 @@ export const useAppStore = () => {
   };
 
   const syncToCloud = async () => {
-    if (!WEBHOOK_URL) {
-      alert("設定エラー: WEBHOOK_URLが設定されていません。AIにURLを伝えてください！");
-      return;
-    }
+    if (!WEBHOOK_URL) return;
+    
+    const newTimestamp = Date.now();
     const data = {
       eventConfig,
       categories,
       positions,
       staffList,
-      shifts
+      shifts,
+      lastUpdated: newTimestamp
     };
     
     try {
@@ -125,30 +145,37 @@ export const useAppStore = () => {
       });
       const result = await response.json();
       if (result.success) {
-        alert('クラウドに保存（同期）しました！他の人もリロードすれば最新になります。');
+        setLastUpdated(newTimestamp);
+        setSyncStatus('saved');
+        setTimeout(() => setSyncStatus('idle'), 3000);
       } else {
-        alert('同期に失敗しました: ' + result.error);
+        setSyncStatus('error');
       }
     } catch (err) {
-      alert('通信エラー: 同期に失敗しました。');
+      setSyncStatus('error');
     }
   };
 
   const loadFromCloud = async () => {
-    if (!WEBHOOK_URL) {
-      return;
-    }
+    if (!WEBHOOK_URL) return;
     
     try {
       const response = await fetch(WEBHOOK_URL);
       const data = await response.json();
       
       if (data && data.eventConfig) {
+        // Only update if remote is newer
+        if (data.lastUpdated && data.lastUpdated <= lastUpdated) {
+          return;
+        }
+        
+        setIsRemoteUpdate(true);
         setEventConfig(data.eventConfig);
         setCategories(data.categories || []);
         setPositions(data.positions || []);
         setStaffList(data.staffList || []);
         setShifts(data.shifts || []);
+        setLastUpdated(data.lastUpdated || Date.now());
         setIsEventLoaded(true);
       }
     } catch (err) {
@@ -167,7 +194,8 @@ export const useAppStore = () => {
     importFromFile,
     resetData,
     syncToCloud,
-    loadFromCloud
+    loadFromCloud,
+    syncStatus
   };
 };
 

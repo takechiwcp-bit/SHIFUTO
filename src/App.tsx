@@ -4,7 +4,7 @@ import SettingsWizard from './components/SettingsWizard';
 import StaffPanel from './components/StaffPanel';
 import ShiftGrid from './components/ShiftGrid';
 import ValidationAlerts from './components/ValidationAlerts';
-import { Calendar, Users, Grid, FileJson, Save, FilePlus, LogOut, Download, CloudUpload, CloudDownload } from 'lucide-react';
+import { Calendar, Users, Grid, FileJson, Save, FilePlus, LogOut, Download, CloudDownload } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
@@ -14,12 +14,21 @@ function App() {
   const [activeTab, setActiveTab] = useState<'grid' | 'staff'>('grid');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 初回読み込み時にクラウドから自動でデータを取ってくる
+  // 初回読み込み時にクラウドから自動でデータを取ってくる＆定期更新
   useEffect(() => {
     if (WEBHOOK_URL) {
       store.loadFromCloud();
+      
+      const interval = setInterval(() => {
+        // 保存中でなければ定期的にクラウドから最新データを取得
+        if (store.syncStatus !== 'saving') {
+          store.loadFromCloud();
+        }
+      }, 10000); // 10秒ごとに取得
+      
+      return () => clearInterval(interval);
     }
-  }, []);
+  }, [store.syncStatus]);
 
   const handleCreateNew = () => {
     store.resetData();
@@ -124,9 +133,12 @@ function App() {
             </button>
           )}
 
-          <button className="btn btn-primary" onClick={() => store.syncToCloud()}>
-            <CloudUpload size={18} /> クラウドに保存(同期)
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '0 1rem', fontSize: '0.875rem', fontWeight: 'bold', color: store.syncStatus === 'error' ? 'var(--danger-color)' : 'var(--text-muted)' }}>
+            {store.syncStatus === 'saving' && 'クラウドに保存中...'}
+            {store.syncStatus === 'saved' && '✓ 保存完了'}
+            {store.syncStatus === 'error' && '通信エラー'}
+            {store.syncStatus === 'idle' && '自動同期オン'}
+          </div>
 
           <button className="btn btn-secondary" onClick={() => store.exportToFile()}>
             <Save size={18} /> バックアップ

@@ -59,15 +59,15 @@ export default function ShiftGrid({ store }: Props) {
           カテゴリー、ポジション、またはスタッフが登録されていません。まずは設定ウィザードとスタッフ入力を完了してください。
         </div>
       ) : (
-        <div style={{ overflowX: 'auto', paddingBottom: '1rem' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 'max-content' }}>
+        <div className="shift-table-container">
+          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 'max-content' }}>
             <thead>
               <tr>
-                <th style={{ position: 'sticky', left: 0, zIndex: 10, background: 'var(--surface-bg)', padding: '0.75rem', borderBottom: '2px solid var(--surface-border)', textAlign: 'left', borderRight: '1px solid var(--surface-border)' }}>
+                <th style={{ position: 'sticky', top: 0, left: 0, zIndex: 20, background: 'var(--surface-bg)', padding: '0.75rem', borderBottom: '2px solid var(--surface-border)', textAlign: 'left', borderRight: '1px solid var(--surface-border)' }}>
                   スタッフ
                 </th>
                 {timeSlots.map(slot => (
-                  <th key={slot} style={{ padding: '0.75rem', borderBottom: '2px solid var(--surface-border)', textAlign: 'center', fontSize: '0.875rem' }}>
+                  <th key={slot} style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--surface-bg)', padding: '0.75rem', borderBottom: '2px solid var(--surface-border)', textAlign: 'center', fontSize: '0.875rem' }}>
                     {slot}
                   </th>
                 ))}
@@ -86,26 +86,41 @@ export default function ShiftGrid({ store }: Props) {
                     const currentPos = positions.find(p => p.id === currentShift?.positionId);
                     
                     return (
-                      <td key={time} style={{ padding: '0.25rem', textAlign: 'center', background: available ? 'transparent' : 'var(--surface-hover)' }}>
+                      <td key={time} style={{ padding: '0.25rem', textAlign: 'center', borderBottom: '1px solid var(--surface-border)', background: available ? 'transparent' : 'var(--surface-hover)' }}>
                         {available ? (
                           <select 
                             value={currentShift?.positionId || ''}
                             onChange={(e) => handleAssign(staff.id, time, e.target.value)}
                             style={{ 
                               width: '100px', 
-                              padding: '0.5rem', 
-                              borderRadius: '4px', 
-                              border: currentPos ? 'none' : '1px dashed var(--surface-border)',
+                              padding: '0.25rem', 
+                              borderRadius: '20px', 
+                              border: 'none',
                               background: currentPos ? currentPos.color : 'transparent',
-                              color: currentPos ? 'white' : 'var(--text-muted)',
+                              color: currentPos ? 'white' : 'transparent',
                               cursor: 'pointer',
-                              fontWeight: currentPos ? 'bold' : 'normal',
-                              fontSize: '0.875rem',
+                              fontWeight: currentPos ? '600' : 'normal',
+                              fontSize: '0.75rem',
+                              textAlign: 'center',
                               appearance: 'none',
-                              textAlign: 'center'
+                              transition: 'all 0.2s',
+                              outline: 'none',
+                              boxShadow: currentPos ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!currentPos) {
+                                e.currentTarget.style.background = 'var(--surface-border)';
+                                e.currentTarget.style.color = 'var(--text-color)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!currentPos) {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'transparent';
+                              }
                             }}
                           >
-                            <option value="" style={{ color: 'black' }}>- 未割当 -</option>
+                            <option value="" style={{ color: 'black' }}>未割当</option>
                             {categories.map(cat => {
                               const activeCatPositions = positions.filter(p => p.categoryId === cat.id && isPositionActiveAt(p, time));
                               if (activeCatPositions.length === 0) return null;
