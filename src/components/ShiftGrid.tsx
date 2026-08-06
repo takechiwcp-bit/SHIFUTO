@@ -92,12 +92,12 @@ export default function ShiftGrid({ store }: Props) {
                             value={currentShift?.positionId || ''}
                             onChange={(e) => handleAssign(staff.id, time, e.target.value)}
                             style={{ 
-                              width: '100px', 
+                              width: '90px', 
                               padding: '0.25rem', 
-                              borderRadius: '20px', 
-                              border: 'none',
-                              background: currentPos ? currentPos.color : 'transparent',
-                              color: currentPos ? 'white' : 'transparent',
+                              borderRadius: '4px', 
+                              border: currentPos ? 'none' : '1px dashed var(--surface-border)',
+                              background: currentPos ? currentPos.color : 'var(--surface-bg)',
+                              color: currentPos ? 'white' : 'var(--text-muted)',
                               cursor: 'pointer',
                               fontWeight: currentPos ? '600' : 'normal',
                               fontSize: '0.75rem',
@@ -109,18 +109,16 @@ export default function ShiftGrid({ store }: Props) {
                             }}
                             onMouseEnter={(e) => {
                               if (!currentPos) {
-                                e.currentTarget.style.background = 'var(--surface-border)';
-                                e.currentTarget.style.color = 'var(--text-color)';
+                                e.currentTarget.style.background = 'var(--surface-hover)';
                               }
                             }}
                             onMouseLeave={(e) => {
                               if (!currentPos) {
-                                e.currentTarget.style.background = 'transparent';
-                                e.currentTarget.style.color = 'transparent';
+                                e.currentTarget.style.background = 'var(--surface-bg)';
                               }
                             }}
                           >
-                            <option value="" style={{ color: 'black' }}>未割当</option>
+                            <option value="" style={{ color: 'black' }}>＋ 割当</option>
                             {categories.map(cat => {
                               const activeCatPositions = positions.filter(p => p.categoryId === cat.id && isPositionActiveAt(p, time));
                               if (activeCatPositions.length === 0) return null;

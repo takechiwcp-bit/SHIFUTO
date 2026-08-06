@@ -92,42 +92,46 @@ export default function StaffPanel({ store }: Props) {
       </div>
 
       <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>追加済みのスタッフ ({staffList.length}名)</h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         {staffList.map(staff => (
-          <div key={staff.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem', border: '1px solid var(--surface-border)', borderRadius: 'var(--border-radius)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <input 
-                className="input" 
-                value={staff.name} 
-                onChange={e => handleStaffChange(staff.id, 'name', e.target.value)}
-                style={{ flex: 1, fontWeight: 'bold' }}
-              />
-              <button className="btn btn-secondary" style={{ color: 'var(--danger-color)', padding: '0.5rem' }} onClick={() => handleRemoveStaff(staff.id)}>
-                <Trash2 size={18} />
-              </button>
-            </div>
+          <div key={staff.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1fr) auto 1fr auto', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', background: 'var(--surface-bg)', border: '1px solid var(--surface-border)', borderRadius: 'var(--border-radius-sm)' }}>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <input 
+              className="input" 
+              value={staff.name} 
+              onChange={e => handleStaffChange(staff.id, 'name', e.target.value)}
+              style={{ fontWeight: '600', border: 'none', background: 'transparent', padding: '0' }}
+            />
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <input 
                 className="input" 
                 type="time" 
                 value={staff.availableStart} 
                 onChange={e => handleStaffChange(staff.id, 'availableStart', e.target.value)}
+                style={{ width: 'auto', padding: '0.25rem 0.5rem' }}
               />
+              <span style={{ color: 'var(--text-muted)' }}>〜</span>
               <input 
                 className="input" 
                 type="time" 
                 value={staff.availableEnd} 
                 onChange={e => handleStaffChange(staff.id, 'availableEnd', e.target.value)}
+                style={{ width: 'auto', padding: '0.25rem 0.5rem' }}
               />
             </div>
             
             <input 
               className="input" 
-              placeholder="備考" 
+              placeholder="備考（任意）" 
               value={staff.notes} 
               onChange={e => handleStaffChange(staff.id, 'notes', e.target.value)}
+              style={{ border: 'none', background: 'transparent' }}
             />
+            
+            <button className="btn btn-secondary" style={{ color: 'var(--danger-color)', padding: '0.5rem', border: 'none', background: 'transparent' }} onClick={() => handleRemoveStaff(staff.id)}>
+              <Trash2 size={18} />
+            </button>
           </div>
         ))}
         {staffList.length === 0 && (
