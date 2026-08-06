@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { parse, addMinutes, isBefore, format } from 'date-fns';
 import type { EventConfig, Category, Position, Staff, ShiftEntry } from './types';
 
 export const defaultEventConfig: EventConfig = {
@@ -183,6 +184,87 @@ export const useAppStore = () => {
     }
   };
 
+  const autoAssignShifts = () => {
+    // Generate time slots
+    const start = parse(eventConfig.startTime, 'HH:mm', new Date());
+    let end = parse(eventConfig.endTime, 'HH:mm', new Date());
+    if (isBefore(end, start)) {
+      end = addMinutes(end, 24 * 60);
+    }
+    const slots: string[] = [];
+    let current = start;
+    while (isBefore(current, end)) {
+      slots.push(format(current, 'HH:mm'));
+      current = addMinutes(current, eventConfig.intervalMinutes);
+    }
+    
+    const newShifts = [...shifts];
+    const continuousMinutes: Record<string, number> = {};
+    const totalShifts: Record<string, number> = {};
+    
+    staffList.forEach(s => {
+      continuousMinutes[s.id] = 0;
+      totalShifts[s.id] = newShifts.filter(sh => sh.staffId === s.id).length;
+    });
+
+    const isAvailable = (staffId: string, timeSlot: string) => {
+      const staff = staffList.find(s => s.id === staffId);
+      if (!staff) return false;
+      return timeSlot >= staff.availableStart && timeSlot < staff.availableEnd;
+    };
+    
+    for (const time of slots) {
+       const workingThisSlot = new Set(newShifts.filter(s => s.timeSlot === time).map(s => s.staffId));
+       
+       const activePositions = positions.filter(p => time >= p.startTime && time < p.endTime);
+       
+       for (const pos of activePositions) {
+          const currentAssigned = newShifts.filter(s => s.timeSlot === time && s.positionId === pos.id).length;
+          const needed = (pos.requiredCount || 1) - currentAssigned;
+          
+          if (needed > 0) {
+            let candidates = staffList.filter(s => {
+               if (!isAvailable(s.id, time)) return false;
+               if (workingThisSlot.has(s.id)) return false;
+               if (continuousMinutes[s.id] + eventConfig.intervalMinutes > eventConfig.maxContinuousWorkMinutes) return false;
+               return true;
+            });
+            
+            const cat = categories.find(c => c.id === pos.categoryId);
+            
+            const scored = candidates.map(s => {
+               let score = 0;
+               if (s.notes.includes(pos.name)) score += 100;
+               if (cat && s.notes.includes(cat.name)) score += 50;
+               // Add a slight random factor to break ties and distribute shifts fairly
+               score += Math.random() * 5; 
+               score -= (totalShifts[s.id] || 0) * 10;
+               return { staff: s, score };
+            });
+            
+            scored.sort((a, b) => b.score - a.score);
+            
+            for (let i = 0; i < Math.min(needed, scored.length); i++) {
+               const sId = scored[i].staff.id;
+               newShifts.push({ staffId: sId, timeSlot: time, positionId: pos.id });
+               workingThisSlot.add(sId);
+               totalShifts[sId]++;
+            }
+          }
+       }
+       
+       staffList.forEach(s => {
+          if (workingThisSlot.has(s.id)) {
+            continuousMinutes[s.id] += eventConfig.intervalMinutes;
+          } else {
+            continuousMinutes[s.id] = 0;
+          }
+       });
+    }
+    
+    setShifts(newShifts);
+  };
+
   return {
     eventConfig, setEventConfig,
     categories, setCategories,
@@ -195,6 +277,7 @@ export const useAppStore = () => {
     resetData,
     syncToCloud,
     loadFromCloud,
+    autoAssignShifts,
     syncStatus
   };
 };

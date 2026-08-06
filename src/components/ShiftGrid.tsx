@@ -52,7 +52,23 @@ export default function ShiftGrid({ store }: Props) {
 
   return (
     <div id="shift-grid-export" style={{ background: 'var(--surface-bg)', padding: '1rem', borderRadius: 'var(--border-radius)' }}>
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>シフト表作成</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: 0 }}>シフト表作成</h2>
+        
+        {positions.length > 0 && staffList.length > 0 && categories.length > 0 && (
+          <button 
+            className="btn btn-primary" 
+            style={{ backgroundColor: 'var(--accent-color)', border: 'none' }}
+            onClick={() => {
+              if (window.confirm('すでに手動で入っているシフトはそのまま残し、空いている枠を自動で割り当てます。よろしいですか？')) {
+                store.autoAssignShifts();
+              }
+            }}
+          >
+            🪄 自動でシフトを組む
+          </button>
+        )}
+      </div>
       
       {positions.length === 0 || staffList.length === 0 || categories.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
