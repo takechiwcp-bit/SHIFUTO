@@ -17,7 +17,8 @@ export default function StaffPanel({ store }: Props) {
   
   const handleAddStaff = () => {
     if (!newStaff.name.trim()) return;
-    setStaffList([...staffList, { ...newStaff, id: crypto.randomUUID() }]);
+    const safeId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    setStaffList([...staffList, { ...newStaff, id: safeId }]);
     setNewStaff({
       name: '',
       availableStart: eventConfig.startTime,

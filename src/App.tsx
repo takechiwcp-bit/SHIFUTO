@@ -14,6 +14,11 @@ function App() {
   const [activeTab, setActiveTab] = useState<'grid' | 'staff'>('grid');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const syncStatusRef = useRef(store.syncStatus);
+  useEffect(() => {
+    syncStatusRef.current = store.syncStatus;
+  }, [store.syncStatus]);
+
   // 初回読み込み時にクラウドから自動でデータを取ってくる＆定期更新
   useEffect(() => {
     if (WEBHOOK_URL) {
@@ -21,14 +26,14 @@ function App() {
       
       const interval = setInterval(() => {
         // 保存中でなければ定期的にクラウドから最新データを取得
-        if (store.syncStatus !== 'saving') {
+        if (syncStatusRef.current !== 'saving') {
           store.loadFromCloud();
         }
       }, 10000); // 10秒ごとに取得
       
       return () => clearInterval(interval);
     }
-  }, [store.syncStatus]);
+  }, []);
 
   const handleCreateNew = () => {
     store.createNewEvent();

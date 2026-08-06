@@ -77,7 +77,10 @@ export const useAppStore = () => {
   useEffect(() => { localStorage.setItem('shift_positions', JSON.stringify(positions)); }, [positions]);
   useEffect(() => { localStorage.setItem('shift_staffList', JSON.stringify(staffList)); }, [staffList]);
   useEffect(() => { localStorage.setItem('shift_shifts', JSON.stringify(shifts)); }, [shifts]);
-  useEffect(() => { if(isEventLoaded) localStorage.setItem('shift_eventLoaded', 'true'); }, [isEventLoaded]);
+  useEffect(() => { 
+    if (isEventLoaded) localStorage.setItem('shift_eventLoaded', 'true'); 
+    else localStorage.removeItem('shift_eventLoaded');
+  }, [isEventLoaded]);
   useEffect(() => { localStorage.setItem('shift_lastUpdated', lastUpdated.toString()); }, [lastUpdated]);
 
   // Keep eventsList in sync with working state
