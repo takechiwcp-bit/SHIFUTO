@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useAppStore } from './store';
+import { useState, useRef, useEffect } from 'react';
+import { useAppStore, WEBHOOK_URL } from './store';
 import SettingsWizard from './components/SettingsWizard';
 import StaffPanel from './components/StaffPanel';
 import ShiftGrid from './components/ShiftGrid';
 import ValidationAlerts from './components/ValidationAlerts';
-import { Calendar, Users, Grid, FileJson, Save, FilePlus, LogOut, Download } from 'lucide-react';
+import { Calendar, Users, Grid, FileJson, Save, FilePlus, LogOut, Download, CloudUpload, CloudDownload } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
@@ -12,6 +12,14 @@ function App() {
   const store = useAppStore();
   const [appMode, setAppMode] = useState<'dashboard' | 'wizard' | 'main'>('dashboard');
   const [activeTab, setActiveTab] = useState<'grid' | 'staff'>('grid');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 初回読み込み時にクラウドから自動でデータを取ってくる
+  useEffect(() => {
+    if (WEBHOOK_URL) {
+      store.loadFromCloud();
+    }
+  }, []);
 
   const handleCreateNew = () => {
     store.resetData();
@@ -33,25 +41,37 @@ function App() {
 
   if (appMode === 'dashboard') {
     return (
-      <div className="container animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+      <div className="container animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', maxWidth: '800px' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem', color: 'var(--primary-color)' }}>シフト作成アプリ</h1>
         <p className="text-muted" style={{ marginBottom: '3rem', fontSize: '1.125rem' }}>ファイルを開くだけで使える、ブラウザ完結のシフト管理ツール</p>
         
-        <div style={{ display: 'flex', gap: '2rem' }}>
-          <button className="card glass" style={{ width: '250px', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', transition: 'transform 0.2s', border: '2px solid transparent' }} 
-            onClick={handleCreateNew}
-          >
-            <FilePlus size={48} color="var(--primary-color)" style={{ marginBottom: '1rem' }} />
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>新規イベント作成</h3>
-            <p className="text-muted" style={{ textAlign: 'center', fontSize: '0.875rem' }}>ゼロから新しいシフト表を作成します</p>
+        <p style={{ color: 'var(--text-muted)' }}>
+          ファイルから読み込むか、クラウドから最新のデータを取得します。
+        </p>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', width: '100%', marginTop: '2rem' }}>
+          <button className="btn btn-primary" style={{ padding: '1.5rem', flexDirection: 'column', gap: '1rem' }} onClick={handleCreateNew}>
+            <FilePlus size={32} />
+            新しいイベントを作成
           </button>
+          
+          <button className="btn btn-secondary" style={{ padding: '1.5rem', flexDirection: 'column', gap: '1rem' }} onClick={() => fileInputRef.current?.click()}>
+            <FileJson size={32} />
+            ファイルから読み込む
+          </button>
+          <input type="file" ref={fileInputRef} accept=".json" style={{ display: 'none' }} onChange={handleFileUpload} />
 
-          <label className="card glass" style={{ width: '250px', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', transition: 'transform 0.2s' }}>
-            <FileJson size={48} color="var(--success-color)" style={{ marginBottom: '1rem' }} />
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>ファイルを読み込む</h3>
-            <p className="text-muted" style={{ textAlign: 'center', fontSize: '0.875rem' }}>保存した.jsonファイルからデータを復元します</p>
-            <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileUpload} />
-          </label>
+          <button className="btn btn-secondary" style={{ padding: '1.5rem', flexDirection: 'column', gap: '1rem', borderColor: 'var(--primary-color)', color: 'var(--primary-color)' }} onClick={async () => {
+            if(!WEBHOOK_URL) {
+              alert("データベース設定が完了していません");
+              return;
+            }
+            await store.loadFromCloud();
+            alert("クラウドから最新のデータを読み込みました！");
+          }}>
+            <CloudDownload size={32} />
+            クラウドから最新を取得
+          </button>
         </div>
         
         {store.isEventLoaded && (
@@ -104,9 +124,14 @@ function App() {
             </button>
           )}
 
-          <button className="btn btn-primary" onClick={() => store.exportToFile()}>
-            <Save size={18} /> ファイル保存
+          <button className="btn btn-primary" onClick={() => store.syncToCloud()}>
+            <CloudUpload size={18} /> クラウドに保存(同期)
           </button>
+
+          <button className="btn btn-secondary" onClick={() => store.exportToFile()}>
+            <Save size={18} /> バックアップ
+          </button>
+          
           <button className="btn btn-secondary" style={{ color: 'var(--danger-color)' }} onClick={() => {
             if(window.confirm('ダッシュボードに戻りますか？未保存の変更は「前回の作業データ」として残りますが、ファイル保存をお勧めします。')) {
               setAppMode('dashboard');

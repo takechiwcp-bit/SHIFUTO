@@ -10,6 +10,12 @@ export const defaultEventConfig: EventConfig = {
   maxContinuousWorkMinutes: 240,
 };
 
+// ==========================================
+// ここにGASのURLを貼り付けます
+// 例: "https://script.google.com/macros/s/AKfycb.../exec"
+// ==========================================
+export const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyqUuD3fatjoOv9Uu7hZ9lsZOsUd8AuAAVjAJBy0Y0R8vhip8p1wsVAXZGNiCNI41bQsQ/exec";
+
 export const useAppStore = () => {
   // Load from local storage
   const [eventConfig, setEventConfig] = useState<EventConfig>(() => {
@@ -99,6 +105,57 @@ export const useAppStore = () => {
     setIsEventLoaded(true);
   };
 
+  const syncToCloud = async () => {
+    if (!WEBHOOK_URL) {
+      alert("設定エラー: WEBHOOK_URLが設定されていません。AIにURLを伝えてください！");
+      return;
+    }
+    const data = {
+      eventConfig,
+      categories,
+      positions,
+      staffList,
+      shifts
+    };
+    
+    try {
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      if (result.success) {
+        alert('クラウドに保存（同期）しました！他の人もリロードすれば最新になります。');
+      } else {
+        alert('同期に失敗しました: ' + result.error);
+      }
+    } catch (err) {
+      alert('通信エラー: 同期に失敗しました。');
+    }
+  };
+
+  const loadFromCloud = async () => {
+    if (!WEBHOOK_URL) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(WEBHOOK_URL);
+      const data = await response.json();
+      
+      if (data && data.eventConfig) {
+        setEventConfig(data.eventConfig);
+        setCategories(data.categories || []);
+        setPositions(data.positions || []);
+        setStaffList(data.staffList || []);
+        setShifts(data.shifts || []);
+        setIsEventLoaded(true);
+      }
+    } catch (err) {
+      console.error('Cloud load failed', err);
+    }
+  };
+
   return {
     eventConfig, setEventConfig,
     categories, setCategories,
@@ -108,7 +165,9 @@ export const useAppStore = () => {
     isEventLoaded, setIsEventLoaded,
     exportToFile,
     importFromFile,
-    resetData
+    resetData,
+    syncToCloud,
+    loadFromCloud
   };
 };
 
