@@ -218,39 +218,51 @@ export const useAppStore = () => {
        
        const activePositions = positions.filter(p => time >= p.startTime && time < p.endTime);
        
-       for (const pos of activePositions) {
-          const currentAssigned = newShifts.filter(s => s.timeSlot === time && s.positionId === pos.id).length;
-          const needed = (pos.requiredCount || 1) - currentAssigned;
-          
-          if (needed > 0) {
-            let candidates = staffList.filter(s => {
-               if (!isAvailable(s.id, time)) return false;
-               if (workingThisSlot.has(s.id)) return false;
-               if (continuousMinutes[s.id] + eventConfig.intervalMinutes > eventConfig.maxContinuousWorkMinutes) return false;
-               return true;
-            });
+       for (const pass of [1, 2]) {
+         for (const pos of activePositions) {
+            const currentAssigned = newShifts.filter(s => s.timeSlot === time && s.positionId === pos.id).length;
+            const needed = (pos.requiredCount || 1) - currentAssigned;
             
-            const cat = categories.find(c => c.id === pos.categoryId);
-            
-            const scored = candidates.map(s => {
-               let score = 0;
-               if (s.notes.includes(pos.name)) score += 100;
-               if (cat && s.notes.includes(cat.name)) score += 50;
-               // Add a slight random factor to break ties and distribute shifts fairly
-               score += Math.random() * 5; 
-               score -= (totalShifts[s.id] || 0) * 10;
-               return { staff: s, score };
-            });
-            
-            scored.sort((a, b) => b.score - a.score);
-            
-            for (let i = 0; i < Math.min(needed, scored.length); i++) {
-               const sId = scored[i].staff.id;
-               newShifts.push({ staffId: sId, timeSlot: time, positionId: pos.id });
-               workingThisSlot.add(sId);
-               totalShifts[sId]++;
+            if (needed > 0) {
+              let candidates = staffList.filter(s => {
+                 if (!isAvailable(s.id, time)) return false;
+                 if (workingThisSlot.has(s.id)) return false;
+                 if (continuousMinutes[s.id] + eventConfig.intervalMinutes > eventConfig.maxContinuousWorkMinutes) return false;
+                 
+                 const cat = categories.find(c => c.id === pos.categoryId);
+                 const mentionsThis = s.notes.includes(pos.name) || (cat && s.notes.includes(cat.name));
+                 const mentionsOtherPos = positions.some(p => s.notes.includes(p.name));
+                 const mentionsOtherCat = categories.some(c => s.notes.includes(c.name));
+                 const mentionsAny = mentionsOtherPos || mentionsOtherCat;
+                 
+                 if (pass === 1) {
+                   // Pass 1: このポジション/カテゴリーを希望している人のみ
+                   return mentionsThis;
+                 } else {
+                   // Pass 2: 何も希望を書いていない人（フリーな人）のみ。
+                   // 他のポジションを希望している人は、ここには割り当てない（希望を尊重する）
+                   return !mentionsAny;
+                 }
+              });
+              
+              const scored = candidates.map(s => {
+                 let score = 0;
+                 // 公平に割り振るためのスコア計算
+                 score += Math.random() * 5; 
+                 score -= (totalShifts[s.id] || 0) * 10;
+                 return { staff: s, score };
+              });
+              
+              scored.sort((a, b) => b.score - a.score);
+              
+              for (let i = 0; i < Math.min(needed, scored.length); i++) {
+                 const sId = scored[i].staff.id;
+                 newShifts.push({ staffId: sId, timeSlot: time, positionId: pos.id });
+                 workingThisSlot.add(sId);
+                 totalShifts[sId]++;
+              }
             }
-          }
+         }
        }
        
        staffList.forEach(s => {
