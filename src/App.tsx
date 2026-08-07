@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useAppStore, WEBHOOK_URL } from './store';
+import { useAppStore } from './store';
 import SettingsWizard from './components/SettingsWizard';
 import StaffPanel from './components/StaffPanel';
 import ShiftGrid from './components/ShiftGrid';
@@ -21,9 +21,7 @@ function App() {
 
   // 初回読み込み時にクラウドからデータを取得
   useEffect(() => {
-    if (WEBHOOK_URL) {
-      store.loadFromCloud();
-    }
+    store.loadFromCloud();
   }, []);
 
   const handleCreateNew = () => {
@@ -67,11 +65,7 @@ function App() {
           <input type="file" ref={fileInputRef} accept=".json" style={{ display: 'none' }} onChange={handleFileUpload} />
 
           <button className="btn btn-secondary" style={{ padding: '1.5rem', flexDirection: 'column', gap: '1rem', borderColor: 'var(--primary-color)', color: 'var(--primary-color)' }} onClick={async () => {
-            if(!WEBHOOK_URL) {
-              alert("データベース設定が完了していません");
-              return;
-            }
-            await store.loadFromCloud(true);
+            await store.loadFromCloud();
             alert("クラウドから最新のデータを読み込みました！");
           }}>
             <CloudDownload size={32} />
