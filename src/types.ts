@@ -2,6 +2,8 @@ export interface AppEvent {
   id: string;
   name: string;
   date: string;
+  startTime?: string; // HH:mm
+  endTime?: string; // HH:mm
   remarks: string;
 }
 

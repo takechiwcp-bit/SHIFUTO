@@ -58,7 +58,10 @@ function App() {
               <ChevronLeft size={16} /> ホームに戻る
             </button>
             <h2 className="text-2xl font-bold text-gray-800">
-              {selectedEvent?.name} <span className="text-sm font-normal text-gray-500 ml-2">{selectedEvent?.date}</span>
+              {selectedEvent?.name} <span className="text-sm font-normal text-gray-500 ml-2">
+                {selectedEvent?.date} 
+                {(selectedEvent?.startTime && selectedEvent?.endTime) && ` (${selectedEvent.startTime} - ${selectedEvent.endTime})`}
+              </span>
             </h2>
           </div>
 
