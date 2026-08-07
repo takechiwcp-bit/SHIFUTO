@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../store';
-import { User } from 'lucide-react';
+import { User, Trash2 } from 'lucide-react';
 
 interface StaffTabProps {
   eventId: string;
@@ -77,13 +77,27 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedStaffId === s.id ? 'border-primary bg-indigo-50' : 'border-gray-200 hover:bg-gray-50'}`}
                 onClick={() => setSelectedStaffId(s.id)}
               >
-                <div className="flex justify-between items-center mb-1">
-                  <div className="font-medium">{s.name}</div>
-                  {(s.availableStartTime && s.availableEndTime) && (
-                    <div className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {s.availableStartTime}〜{s.availableEndTime}
-                    </div>
-                  )}
+                <div className="flex justify-between items-start mb-1">
+                  <div>
+                    <div className="font-medium">{s.name}</div>
+                    {(s.availableStartTime && s.availableEndTime) && (
+                      <div className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded inline-block mt-1">
+                        {s.availableStartTime}〜{s.availableEndTime}
+                      </div>
+                    )}
+                  </div>
+                  <button 
+                    className="text-gray-400 hover:text-red-500 p-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`${s.name} さんを本当に削除しますか？`)) {
+                        dispatchAction('DELETE_STAFF', { id: s.id });
+                        if (selectedStaffId === s.id) setSelectedStaffId(null);
+                      }
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
                 <div className="text-xs text-gray-500 truncate">{s.remarks}</div>
               </div>

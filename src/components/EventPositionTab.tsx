@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../store';
-import { Plus, Save } from 'lucide-react';
+import { Plus, Save, Trash2 } from 'lucide-react';
 
 interface EventPositionTabProps {
   eventId: string;
@@ -57,8 +57,18 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
             <h3 className="mb-2 text-sm text-gray-500">作成済みカテゴリー</h3>
             {eventCategories.length === 0 && <p className="text-sm text-gray-400">カテゴリーがありません</p>}
             {eventCategories.map(cat => (
-              <div key={cat.id} className="p-2 border-b">
-                {cat.name}
+              <div key={cat.id} className="p-2 border-b flex justify-between items-center group">
+                <span>{cat.name}</span>
+                <button 
+                  className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => {
+                    if (window.confirm(`カテゴリー「${cat.name}」を本当に削除しますか？\n(紐づくポジションも削除されます)`)) {
+                      dispatchAction('DELETE_CATEGORY', { id: cat.id });
+                    }
+                  }}
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             ))}
           </div>
@@ -88,6 +98,7 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                   <th className="p-2">時間</th>
                   <th className="p-2">単位(分)</th>
                   <th className="p-2">備考</th>
+                  <th className="p-2"></th>
                 </tr>
               </thead>
               <tbody>
@@ -101,6 +112,18 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                       <td className="p-2">{pos.startTime} - {pos.endTime}</td>
                       <td className="p-2">{pos.unitTime}分</td>
                       <td className="p-2 text-sm text-gray-500">{pos.remarks}</td>
+                      <td className="p-2 text-right">
+                        <button 
+                          className="text-gray-400 hover:text-red-500 p-1"
+                          onClick={() => {
+                            if (window.confirm(`ポジション「${pos.name}」を本当に削除しますか？`)) {
+                              dispatchAction('DELETE_POSITION', { id: pos.id });
+                            }
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
                     </tr>
                   )
                 })}

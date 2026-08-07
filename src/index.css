@@ -81,6 +81,9 @@ input, select, textarea {
   transition: all 0.2s ease;
   outline: none;
 }
+textarea {
+  resize: none;
+}
 
 input:focus, select:focus, textarea:focus {
   background: rgba(198, 156, 109, 0.1);
