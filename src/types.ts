@@ -44,4 +44,6 @@ export interface ShiftEvent {
   staffList: Staff[];
   shifts: ShiftEntry[];
   lastUpdated: number;
+  payload?: string;
+  staffCount?: number;
 }

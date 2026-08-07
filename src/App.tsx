@@ -95,7 +95,7 @@ function App() {
                   <div>
                     <div style={{ fontWeight: 'bold', fontSize: '1.125rem' }}>{ev.eventConfig.name}</div>
                     <div className="text-muted" style={{ fontSize: '0.875rem' }}>
-                      {ev.eventConfig.date} | スタッフ {ev.staffList?.length || 0}名
+                      {ev.eventConfig.date} | スタッフ {ev.staffCount ?? ev.staffList?.length ?? 0}名
                     </div>
                   </div>
                   <button className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>編集する</button>

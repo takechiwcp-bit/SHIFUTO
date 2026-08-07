@@ -1,6 +1,55 @@
 import { useState, useEffect } from 'react';
 import { parse, addMinutes, isBefore, format } from 'date-fns';
 import type { EventConfig, Category, Position, Staff, ShiftEntry, ShiftEvent } from './types';
+async function compressData(data: any): Promise<string> {
+  const json = JSON.stringify({
+    c: data.categories?.map((c: any) => [c.id, c.name]),
+    p: data.positions?.map((p: any) => [p.id, p.categoryId, p.name, p.color, p.startTime, p.endTime, p.requiredCount]),
+    s: data.staffList?.map((s: any) => [s.id, s.name, s.availableStart, s.availableEnd, s.notes]),
+    sh: data.shifts?.map((sh: any) => [sh.staffId, sh.positionId, sh.timeSlot])
+  });
+
+  if (typeof CompressionStream !== 'undefined') {
+    try {
+      const stream = new Blob([json]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+      const blob = await new Response(stream).blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve('C:' + (reader.result as string).split(',')[1]);
+        reader.readAsDataURL(blob);
+      });
+    } catch(e) { console.warn('Compression failed', e); }
+  }
+  return 'M:' + json;
+}
+
+async function decompressData(payload: string): Promise<any> {
+  try {
+    let json = '';
+    if (payload.startsWith('C:')) {
+       const base64 = payload.substring(2);
+       const res = await fetch(`data:application/octet-stream;base64,${base64}`);
+       const blob = await res.blob();
+       const stream = blob.stream().pipeThrough(new DecompressionStream('deflate-raw'));
+       const decompressedBlob = await new Response(stream).blob();
+       json = await decompressedBlob.text();
+    } else if (payload.startsWith('M:')) {
+       json = payload.substring(2);
+    } else {
+       return null;
+    }
+    const parsed = JSON.parse(json);
+    return {
+       categories: (parsed.c || []).map((c: any) => ({ id: c[0], name: c[1] })),
+       positions: (parsed.p || []).map((p: any) => ({ id: p[0], categoryId: p[1], name: p[2], color: p[3], startTime: p[4], endTime: p[5], requiredCount: p[6] })),
+       staffList: (parsed.s || []).map((s: any) => ({ id: s[0], name: s[1], availableStart: s[2], availableEnd: s[3], notes: s[4] })),
+       shifts: (parsed.sh || []).map((sh: any) => ({ staffId: sh[0], positionId: sh[1], timeSlot: sh[2] }))
+    };
+  } catch (err) {
+    console.error('Decompression error', err);
+    return null;
+  }
+}
 
 export const defaultEventConfig: EventConfig = {
   name: '新規イベント',
@@ -15,7 +64,7 @@ export const defaultEventConfig: EventConfig = {
 // ここにGASのURLを貼り付けます
 // 例: "https://script.google.com/macros/s/AKfycb.../exec"
 // ==========================================
-export const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyqUuD3fatjoOv9Uu7hZ9lsZOsUd8AuAAVjAJBy0Y0R8vhip8p1wsVAXZGNiCNI41bQsQ/exec";
+export const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwWA2mSLA4iJPTWgSJ-osBkcb8vUGaYq7sd-IAJVXElSFlKREqve_9hbUaBpcLy2_PHTw/exec";
 
 export const useAppStore = () => {
   // Load from local storage
@@ -197,14 +246,18 @@ export const useAppStore = () => {
     if (!WEBHOOK_URL || !activeEventId) return;
     
     const newTimestamp = Date.now();
+    const payload = await compressData({ categories, positions, staffList, shifts });
+
     const data: ShiftEvent = {
       id: activeEventId,
       eventConfig,
-      categories,
-      positions,
-      staffList,
-      shifts,
-      lastUpdated: newTimestamp
+      categories: [],
+      positions: [],
+      staffList: [],
+      shifts: [],
+      lastUpdated: newTimestamp,
+      payload,
+      staffCount: staffList.length
     };
     
     try {
@@ -230,9 +283,23 @@ export const useAppStore = () => {
     
     try {
       const response = await fetch(WEBHOOK_URL);
-      const data = await response.json();
+      const rawData = await response.json();
       
-      if (Array.isArray(data)) {
+      const processEvent = async (ev: any) => {
+        if (ev.payload) {
+          const decomp = await decompressData(ev.payload);
+          if (decomp) {
+            ev.categories = decomp.categories;
+            ev.positions = decomp.positions;
+            ev.staffList = decomp.staffList;
+            ev.shifts = decomp.shifts;
+          }
+        }
+        return ev;
+      };
+      
+      if (Array.isArray(rawData)) {
+        const data = await Promise.all(rawData.map(processEvent));
         setEventsList(data);
         if (activeEventId) {
           const activeCloud = data.find(e => e.id === activeEventId);
@@ -246,10 +313,10 @@ export const useAppStore = () => {
             setLastUpdated(activeCloud.lastUpdated || Date.now());
           }
         }
-      } else if (data && data.eventConfig) {
+      } else if (rawData && rawData.eventConfig) {
         // Fallback for old GAS script that returns a single object
         const legacyId = 'legacy-event';
-        const ev: ShiftEvent = { ...data, id: legacyId };
+        const ev = await processEvent({ ...rawData, id: legacyId });
         setEventsList([ev]);
         if (activeEventId === legacyId && (force || ev.lastUpdated > lastUpdated)) {
           setIsRemoteUpdate(true);
