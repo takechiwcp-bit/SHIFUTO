@@ -4,11 +4,12 @@ import { EventListScreen } from './components/EventListScreen';
 import { EventPositionTab } from './components/EventPositionTab';
 import { StaffTab } from './components/StaffTab';
 import { ShiftTab } from './components/ShiftTab';
-import { Calendar, Users, Grid, ChevronLeft } from 'lucide-react';
+import { ShiftTableTab } from './components/ShiftTableTab';
+import { Calendar, Users, Grid, ChevronLeft, Table } from 'lucide-react';
 
 function App() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'event' | 'staff' | 'shift'>('event');
+  const [activeTab, setActiveTab] = useState<'event' | 'staff' | 'shift' | 'shiftTable'>('event');
   
   const { Events, error } = useStore();
 
@@ -84,12 +85,19 @@ function App() {
             >
               <Grid size={18} /> シフト作成
             </div>
+            <div 
+              className={`tab ${activeTab === 'shiftTable' ? 'active' : ''} flex items-center gap-2`}
+              onClick={() => setActiveTab('shiftTable')}
+            >
+              <Table size={18} /> シフト表
+            </div>
           </div>
 
           <main>
             {activeTab === 'event' && <EventPositionTab eventId={selectedEventId} />}
             {activeTab === 'staff' && <StaffTab eventId={selectedEventId} />}
             {activeTab === 'shift' && <ShiftTab eventId={selectedEventId} />}
+            {activeTab === 'shiftTable' && <ShiftTableTab eventId={selectedEventId} />}
           </main>
         </div>
       )}
