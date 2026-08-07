@@ -106,8 +106,8 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                   <th className="p-2">ポジション名</th>
                   <th className="p-2">必要人数</th>
                   <th className="p-2">時間</th>
-                  <th className="p-2">単位(分)</th>
-                  <th className="p-2">枠の種類</th>
+                  <th className="p-2 whitespace-nowrap">単位(分)</th>
+                  <th className="p-2 whitespace-nowrap">枠の種類</th>
                   <th className="p-2">備考</th>
                   <th className="p-2"></th>
                 </tr>
@@ -122,8 +122,8 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                       <td className="p-2">{pos.requiredPeople}名</td>
                       <td className="p-2">{pos.startTime} - {pos.endTime}</td>
                       <td className="p-2">{pos.unitTime}分</td>
-                      <td className="p-2">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${pos.isFixed ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                      <td className="p-2 whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${pos.isFixed ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
                           {pos.isFixed ? '固定枠' : '変動枠'}
                         </span>
                       </td>
@@ -181,12 +181,12 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
               <div className="form-group">
                 <label className="font-bold block mb-2">枠の種類</label>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                  <label className="flex items-start sm:items-center gap-2 cursor-pointer">
-                    <input type="radio" name="posType" className="mt-1 sm:mt-0" checked={!posForm.isFixed} onChange={() => setPosForm({...posForm, isFixed: false})} />
+                  <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                    <input type="radio" name="posType" checked={!posForm.isFixed} onChange={() => setPosForm({...posForm, isFixed: false})} />
                     <span className="text-sm">変動枠</span>
                   </label>
-                  <label className="flex items-start sm:items-center gap-2 cursor-pointer">
-                    <input type="radio" name="posType" className="mt-1 sm:mt-0" checked={posForm.isFixed} onChange={() => setPosForm({...posForm, isFixed: true})} />
+                  <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                    <input type="radio" name="posType" checked={posForm.isFixed} onChange={() => setPosForm({...posForm, isFixed: true})} />
                     <span className="text-sm">固定枠</span>
                   </label>
                 </div>
@@ -275,12 +275,12 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
               <div className="form-group">
                 <label className="font-bold block mb-2">枠の種類</label>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                  <label className="flex items-start sm:items-center gap-2 cursor-pointer">
-                    <input type="radio" name="editPosType" className="mt-1 sm:mt-0" checked={!editPositionModal.isFixed} onChange={() => setEditPositionModal({...editPositionModal, isFixed: false})} />
+                  <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                    <input type="radio" name="editPosType" checked={!editPositionModal.isFixed} onChange={() => setEditPositionModal({...editPositionModal, isFixed: false})} />
                     <span className="text-sm">変動枠</span>
                   </label>
-                  <label className="flex items-start sm:items-center gap-2 cursor-pointer">
-                    <input type="radio" name="editPosType" className="mt-1 sm:mt-0" checked={editPositionModal.isFixed} onChange={() => setEditPositionModal({...editPositionModal, isFixed: true})} />
+                  <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                    <input type="radio" name="editPosType" checked={editPositionModal.isFixed} onChange={() => setEditPositionModal({...editPositionModal, isFixed: true})} />
                     <span className="text-sm">固定枠</span>
                   </label>
                 </div>
