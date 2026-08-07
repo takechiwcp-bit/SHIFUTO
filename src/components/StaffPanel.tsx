@@ -7,7 +7,7 @@ interface Props {
 }
 
 export default function StaffPanel({ store }: Props) {
-  const { eventConfig, staffList, setStaffList } = store;
+  const { eventConfig, staffList, setStaffList, removeStaff } = store;
   const [newStaff, setNewStaff] = useState({
     name: '',
     availableStart: eventConfig.startTime,
@@ -28,7 +28,7 @@ export default function StaffPanel({ store }: Props) {
   };
   
   const handleRemoveStaff = (id: string) => {
-    setStaffList(staffList.filter(s => s.id !== id));
+    removeStaff(id);
   };
   
   const handleStaffChange = (id: string, field: keyof typeof staffList[0], value: any) => {

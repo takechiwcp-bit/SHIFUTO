@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { parse, addMinutes, isBefore, format } from 'date-fns';
 import type { EventConfig, Category, Position, Staff, ShiftEntry, ShiftEvent } from './types';
+
 async function compressData(data: any): Promise<string> {
   const json = JSON.stringify({
     c: data.categories?.map((c: any) => [c.id, c.name]),
     p: data.positions?.map((p: any) => [p.id, p.categoryId, p.name, p.color, p.startTime, p.endTime, p.requiredCount]),
     s: data.staffList?.map((s: any) => [s.id, s.name, s.availableStart, s.availableEnd, s.notes]),
-    sh: data.shifts?.map((sh: any) => [sh.staffId, sh.positionId, sh.timeSlot])
+    sh: data.shifts?.map((sh: any) => [sh.staffId, sh.positionId, sh.timeSlot]),
+    d: data.deletedStaffIds || []
   });
 
   if (typeof CompressionStream !== 'undefined') {
@@ -43,7 +45,8 @@ async function decompressData(payload: string): Promise<any> {
        categories: (parsed.c || []).map((c: any) => ({ id: c[0], name: c[1] })),
        positions: (parsed.p || []).map((p: any) => ({ id: p[0], categoryId: p[1], name: p[2], color: p[3], startTime: p[4], endTime: p[5], requiredCount: p[6] })),
        staffList: (parsed.s || []).map((s: any) => ({ id: s[0], name: s[1], availableStart: s[2], availableEnd: s[3], notes: s[4] })),
-       shifts: (parsed.sh || []).map((sh: any) => ({ staffId: sh[0], positionId: sh[1], timeSlot: sh[2] }))
+       shifts: (parsed.sh || []).map((sh: any) => ({ staffId: sh[0], positionId: sh[1], timeSlot: sh[2] })),
+       deletedStaffIds: parsed.d || []
     };
   } catch (err) {
     console.error('Decompression error', err);
@@ -93,6 +96,11 @@ export const useAppStore = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [deletedStaffIds, setDeletedStaffIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('shift_deletedStaffIds');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [isEventLoaded, setIsEventLoaded] = useState(() => {
     return localStorage.getItem('shift_eventLoaded') !== null;
   });
@@ -126,6 +134,7 @@ export const useAppStore = () => {
   useEffect(() => { localStorage.setItem('shift_positions', JSON.stringify(positions)); }, [positions]);
   useEffect(() => { localStorage.setItem('shift_staffList', JSON.stringify(staffList)); }, [staffList]);
   useEffect(() => { localStorage.setItem('shift_shifts', JSON.stringify(shifts)); }, [shifts]);
+  useEffect(() => { localStorage.setItem('shift_deletedStaffIds', JSON.stringify(deletedStaffIds)); }, [deletedStaffIds]);
   useEffect(() => { 
     if (isEventLoaded) localStorage.setItem('shift_eventLoaded', 'true'); 
     else localStorage.removeItem('shift_eventLoaded');
@@ -137,7 +146,7 @@ export const useAppStore = () => {
     if (!activeEventId || isRemoteUpdate) return;
     setEventsList(prev => {
       const idx = prev.findIndex(e => e.id === activeEventId);
-      const newEv: ShiftEvent = { id: activeEventId, eventConfig, categories, positions, staffList, shifts, lastUpdated };
+      const newEv: ShiftEvent = { id: activeEventId, eventConfig, categories, positions, staffList, shifts, lastUpdated, deletedStaffIds };
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = newEv;
@@ -145,7 +154,7 @@ export const useAppStore = () => {
       }
       return [...prev, newEv];
     });
-  }, [eventConfig, categories, positions, staffList, shifts, lastUpdated, activeEventId]);
+  }, [eventConfig, categories, positions, staffList, shifts, deletedStaffIds, lastUpdated, activeEventId]);
 
   // Auto-sync to cloud when local data changes
   useEffect(() => {
@@ -161,7 +170,27 @@ export const useAppStore = () => {
     }, 2000);
     
     return () => clearTimeout(timer);
-  }, [eventConfig, categories, positions, staffList, shifts]);
+  }, [eventConfig, categories, positions, staffList, shifts, deletedStaffIds]);
+
+  // Auto-polling for real-time sync
+  useEffect(() => {
+    if (!WEBHOOK_URL || !isEventLoaded) return;
+    
+    // Poll every 10 seconds
+    const timer = setInterval(() => {
+      // Only poll if we aren't currently saving
+      if (syncStatus === 'idle' || syncStatus === 'saved') {
+         syncToCloud(true); // Reusing syncToCloud's smart merge
+      }
+    }, 10000);
+    
+    return () => clearInterval(timer);
+  }, [WEBHOOK_URL, isEventLoaded, syncStatus, activeEventId, staffList, shifts, categories, positions, deletedStaffIds]);
+
+  const removeStaff = (id: string) => {
+    setStaffList(prev => prev.filter(s => s.id !== id));
+    setDeletedStaffIds(prev => [...prev, id]);
+  };
 
   const exportToFile = () => {
     const data = {
@@ -215,6 +244,7 @@ export const useAppStore = () => {
     setPositions([]);
     setStaffList([]);
     setShifts([]);
+    setDeletedStaffIds([]);
     setLastUpdated(Date.now());
     setActiveEventId(id);
     setIsEventLoaded(true);
@@ -230,6 +260,7 @@ export const useAppStore = () => {
       setPositions(ev.positions || []);
       setStaffList(ev.staffList || []);
       setShifts(ev.shifts || []);
+      setDeletedStaffIds(ev.deletedStaffIds || []);
       setLastUpdated(ev.lastUpdated || Date.now());
       setActiveEventId(id);
       setIsEventLoaded(true);
@@ -237,35 +268,116 @@ export const useAppStore = () => {
   };
 
   const resetData = () => {
-    // This is now "Close Event"
     setActiveEventId(null);
     setIsEventLoaded(false);
   };
 
-  const syncToCloud = async () => {
+  const syncToCloud = async (isPolling = false) => {
     if (!WEBHOOK_URL || !activeEventId) return;
     
-    const newTimestamp = Date.now();
-    const payload = await compressData({ categories, positions, staffList, shifts });
+    if (!isPolling) {
+      setSyncStatus('saving');
+    }
 
-    const data: ShiftEvent = {
-      id: activeEventId,
-      eventConfig,
-      categories: [],
-      positions: [],
-      staffList: [],
-      shifts: [],
-      lastUpdated: newTimestamp,
-      payload,
-      staffCount: staffList.length
-    };
-    
     try {
-      const response = await fetch(WEBHOOK_URL, {
+      // 1. Fetch latest data first to smart-merge and avoid overwriting other people's edits
+      const response = await fetch(WEBHOOK_URL);
+      const rawData = await response.json();
+      
+      let mergedStaff = [...staffList];
+      let mergedShifts = [...shifts];
+      let mergedCategories = [...categories];
+      let mergedPositions = [...positions];
+      let mergedDeletedIds = [...deletedStaffIds];
+
+      let remoteHasUpdates = false;
+
+      const activeCloud = Array.isArray(rawData) 
+        ? rawData.find(e => e.id === activeEventId) 
+        : (rawData.eventConfig ? rawData : null);
+
+      if (activeCloud && activeCloud.payload) {
+        const decomp = await decompressData(activeCloud.payload);
+        if (decomp) {
+           // Union of deleted IDs
+           const remoteDeleted = decomp.deletedStaffIds || [];
+           const allDeletedSet = new Set([...deletedStaffIds, ...remoteDeleted]);
+           mergedDeletedIds = Array.from(allDeletedSet);
+
+           // Merge Categories (Union by ID)
+           const catMap = new Map(decomp.categories.map((c: Category) => [c.id, c]));
+           categories.forEach(c => catMap.set(c.id, c));
+           mergedCategories = Array.from(catMap.values());
+
+           // Merge Positions (Union by ID)
+           const posMap = new Map(decomp.positions.map((p: Position) => [p.id, p]));
+           positions.forEach(p => posMap.set(p.id, p));
+           mergedPositions = Array.from(posMap.values());
+
+           // Merge Staff (Union by ID), filtering out deleted
+           const staffMap = new Map(decomp.staffList.map((s: Staff) => [s.id, s]));
+           staffList.forEach(s => staffMap.set(s.id, s));
+           mergedStaff = Array.from(staffMap.values()).filter(s => !allDeletedSet.has(s.id));
+
+           // Merge Shifts (Union by staffId-timeSlot)
+           const shiftKey = (sh: ShiftEntry) => `${sh.staffId}-${sh.timeSlot}`;
+           const shiftMap = new Map(decomp.shifts.map((sh: ShiftEntry) => [shiftKey(sh), sh]));
+           shifts.forEach(sh => shiftMap.set(shiftKey(sh), sh));
+           // Filter out shifts for deleted staff
+           mergedShifts = Array.from(shiftMap.values()).filter(sh => !allDeletedSet.has(sh.staffId));
+
+           if (activeCloud.lastUpdated > lastUpdated) {
+             remoteHasUpdates = true;
+           }
+        }
+      }
+
+      // Update local React state silently with merged data
+      setIsRemoteUpdate(true);
+      setCategories(mergedCategories);
+      setPositions(mergedPositions);
+      setStaffList(mergedStaff);
+      setShifts(mergedShifts);
+      setDeletedStaffIds(mergedDeletedIds);
+
+      // If we're just polling and nothing changed locally, we can stop here if there are no new local edits to push.
+      // But for safety and simplicity in a pseudo-concurrent system, we just save the merged result.
+      // Actually, to save bandwidth, if it's polling and our local state is completely identical to what we merged,
+      // we don't need to POST.
+      if (isPolling && !remoteHasUpdates) {
+         // This means we polled but nothing changed on the server, and we didn't have any unsaved local edits
+         // (because if we did, syncStatus wouldn't be 'idle'). So just return.
+         return;
+      }
+
+      // 2. Save the perfectly merged data to cloud
+      const newTimestamp = Date.now();
+      const payload = await compressData({ 
+        categories: mergedCategories, 
+        positions: mergedPositions, 
+        staffList: mergedStaff, 
+        shifts: mergedShifts,
+        deletedStaffIds: mergedDeletedIds
+      });
+
+      const data: ShiftEvent = {
+        id: activeEventId,
+        eventConfig,
+        categories: [],
+        positions: [],
+        staffList: [],
+        shifts: [],
+        lastUpdated: newTimestamp,
+        payload,
+        staffCount: mergedStaff.length,
+        deletedStaffIds: []
+      };
+      
+      const postResponse = await fetch(WEBHOOK_URL, {
         method: 'POST',
         body: JSON.stringify(data)
       });
-      const result = await response.json();
+      const result = await postResponse.json();
       if (result.success) {
         setLastUpdated(newTimestamp);
         setSyncStatus('saved');
@@ -274,63 +386,14 @@ export const useAppStore = () => {
         setSyncStatus('error');
       }
     } catch (err) {
-      setSyncStatus('error');
+      console.error(err);
+      if (!isPolling) setSyncStatus('error');
     }
   };
 
   const loadFromCloud = async (force = false) => {
-    if (!WEBHOOK_URL) return;
-    
-    try {
-      const response = await fetch(WEBHOOK_URL);
-      const rawData = await response.json();
-      
-      const processEvent = async (ev: any) => {
-        if (ev.payload) {
-          const decomp = await decompressData(ev.payload);
-          if (decomp) {
-            ev.categories = decomp.categories;
-            ev.positions = decomp.positions;
-            ev.staffList = decomp.staffList;
-            ev.shifts = decomp.shifts;
-          }
-        }
-        return ev;
-      };
-      
-      if (Array.isArray(rawData)) {
-        const data = await Promise.all(rawData.map(processEvent));
-        setEventsList(data);
-        if (activeEventId) {
-          const activeCloud = data.find(e => e.id === activeEventId);
-          if (activeCloud && (force || activeCloud.lastUpdated > lastUpdated)) {
-            setIsRemoteUpdate(true);
-            setEventConfig(activeCloud.eventConfig);
-            setCategories(activeCloud.categories || []);
-            setPositions(activeCloud.positions || []);
-            setStaffList(activeCloud.staffList || []);
-            setShifts(activeCloud.shifts || []);
-            setLastUpdated(activeCloud.lastUpdated || Date.now());
-          }
-        }
-      } else if (rawData && rawData.eventConfig) {
-        // Fallback for old GAS script that returns a single object
-        const legacyId = 'legacy-event';
-        const ev = await processEvent({ ...rawData, id: legacyId });
-        setEventsList([ev]);
-        if (activeEventId === legacyId && (force || ev.lastUpdated > lastUpdated)) {
-          setIsRemoteUpdate(true);
-          setEventConfig(ev.eventConfig);
-          setCategories(ev.categories || []);
-          setPositions(ev.positions || []);
-          setStaffList(ev.staffList || []);
-          setShifts(ev.shifts || []);
-          setLastUpdated(ev.lastUpdated || Date.now());
-        }
-      }
-    } catch (err) {
-      console.error('Cloud load failed', err);
-    }
+    // Left empty or we can just redirect to syncToCloud for the smart merge
+    await syncToCloud(true);
   };
 
   const autoAssignShifts = () => {
@@ -460,6 +523,7 @@ export const useAppStore = () => {
     positions, setPositions,
     staffList, setStaffList,
     shifts, setShifts,
+    removeStaff,
     isEventLoaded, setIsEventLoaded,
     exportToFile,
     importFromFile,

@@ -46,4 +46,5 @@ export interface ShiftEvent {
   lastUpdated: number;
   payload?: string;
   staffCount?: number;
+  deletedStaffIds?: string[];
 }
