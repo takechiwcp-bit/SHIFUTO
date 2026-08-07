@@ -11,7 +11,7 @@ function App() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'event' | 'staff' | 'shift' | 'shiftTable'>('event');
   
-  const { Events, error } = useStore();
+  const { Events, error, isLoading } = useStore();
 
   useEffect(() => {
     startPolling();
@@ -24,7 +24,7 @@ function App() {
       <header className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-teal-400">
-            Shift Manager Pro
+            Shift Manager Pro v2
           </h1>
           <p className="text-gray-500 text-sm mt-1">Google Sheets Connected</p>
         </div>
@@ -44,7 +44,12 @@ function App() {
         </div>
       </header>
 
-      {!selectedEventId ? (
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 fade-in">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-500 font-medium">Google Spreadsheetからデータを読み込んでいます...</p>
+        </div>
+      ) : !selectedEventId ? (
         <EventListScreen onSelectEvent={setSelectedEventId} />
       ) : (
         <div className="fade-in">

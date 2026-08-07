@@ -7,6 +7,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwTFt6kVq5LSmtK_IbAEezf
 interface StoreState extends AppState {
   loading: boolean;
   error: string | null;
+  isLoading: boolean;
   fetchData: () => Promise<void>;
   dispatchAction: (action: string, payload: any) => Promise<void>;
 }
@@ -20,8 +21,10 @@ export const useStore = create<StoreState>((set) => ({
   Shifts: [],
   loading: false,
   error: null,
+  isLoading: true,
   
   fetchData: async () => {
+    set({ isLoading: true });
     try {
       const response = await fetch(API_URL);
       const result = await response.json();
@@ -33,14 +36,15 @@ export const useStore = create<StoreState>((set) => ({
           Staff: result.data.Staff || [],
           StaffTraits: result.data.StaffTraits || [],
           Shifts: result.data.Shifts || [],
-          error: null
+          error: null,
+          isLoading: false
         });
       } else {
-        set({ error: result.error });
+        set({ error: result.error, isLoading: false });
       }
     } catch (err: any) {
       console.error("Fetch Error:", err);
-      set({ error: err.message });
+      set({ error: err.message, isLoading: false });
     }
   },
   
