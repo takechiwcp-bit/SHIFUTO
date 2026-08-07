@@ -17,7 +17,14 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
   // Filter for this event
   const eventCategories = PositionCategories.filter(c => c.eventId === eventId);
   const eventCategoryIds = eventCategories.map(c => c.id);
-  const eventPositions = Positions.filter(p => eventCategoryIds.includes(p.categoryId));
+  const eventPositions = Positions
+    .filter(p => eventCategoryIds.includes(p.categoryId))
+    .sort((a, b) => {
+      const catA = eventCategories.find(c => c.id === a.categoryId)?.name || '';
+      const catB = eventCategories.find(c => c.id === b.categoryId)?.name || '';
+      if (catA !== catB) return catA.localeCompare(catB);
+      return a.name.localeCompare(b.name);
+    });
 
   const [posForm, setPosForm] = useState({
     categoryId: '', name: '', requiredPeople: 1, unitTime: 30, startTime: '09:00', endTime: '18:00', remarks: '', isFixed: false
