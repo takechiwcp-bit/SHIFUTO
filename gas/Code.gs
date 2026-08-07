@@ -98,6 +98,15 @@ function getOrCreateSheet(sheetName) {
     if (headers.length > 0) {
       sheet.appendRow(headers);
     }
+  } else {
+    // Auto-sync headers to ensure no data loss if new columns were added
+    const expectedHeaders = getHeadersForSheet(sheetName);
+    if (expectedHeaders.length > 0) {
+      const existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn() || 1).getValues()[0];
+      if (expectedHeaders.length > existingHeaders.length || expectedHeaders.some((h, i) => h !== existingHeaders[i])) {
+        sheet.getRange(1, 1, 1, expectedHeaders.length).setValues([expectedHeaders]);
+      }
+    }
   }
   return sheet;
 }

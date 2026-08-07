@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { User, Trash2, Pencil } from 'lucide-react';
 
@@ -7,12 +7,20 @@ interface StaffTabProps {
 }
 
 export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
-  const { Staff, Positions, PositionCategories, StaffTraits, dispatchAction } = useStore();
+  const { Events, Staff, Positions, PositionCategories, StaffTraits, dispatchAction } = useStore();
+  const currentEvent = Events.find(e => e.id === eventId);
+  const defaultStartTime = currentEvent?.startTime || '09:00';
+  const defaultEndTime = currentEvent?.endTime || '18:00';
   
   const [newStaffName, setNewStaffName] = useState('');
-  const [newStaffStartTime, setNewStaffStartTime] = useState('09:00');
-  const [newStaffEndTime, setNewStaffEndTime] = useState('18:00');
+  const [newStaffStartTime, setNewStaffStartTime] = useState(defaultStartTime);
+  const [newStaffEndTime, setNewStaffEndTime] = useState(defaultEndTime);
   const [newStaffRemarks, setNewStaffRemarks] = useState('');
+  
+  useEffect(() => {
+    setNewStaffStartTime(defaultStartTime);
+    setNewStaffEndTime(defaultEndTime);
+  }, [defaultStartTime, defaultEndTime]);
   
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [editStaffModal, setEditStaffModal] = useState<{ id: string; name: string; availableStartTime: string; availableEndTime: string; remarks: string } | null>(null);
@@ -31,8 +39,8 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
       remarks: newStaffRemarks
     });
     setNewStaffName('');
-    setNewStaffStartTime('09:00');
-    setNewStaffEndTime('18:00');
+    setNewStaffStartTime(defaultStartTime);
+    setNewStaffEndTime(defaultEndTime);
     setNewStaffRemarks('');
   };
 
@@ -95,8 +103,8 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
                         setEditStaffModal({
                           id: s.id,
                           name: s.name,
-                          availableStartTime: s.availableStartTime || '09:00',
-                          availableEndTime: s.availableEndTime || '18:00',
+                          availableStartTime: s.availableStartTime || defaultStartTime,
+                          availableEndTime: s.availableEndTime || defaultEndTime,
                           remarks: s.remarks || ''
                         });
                       }}
