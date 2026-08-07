@@ -136,8 +136,18 @@ function fetchAllData() {
       const obj = {};
       let isEmpty = true;
       for (let j = 0; j < headers.length; j++) {
-        obj[headers[j]] = row[j] !== undefined ? row[j] : null;
-        if (row[j] !== "") isEmpty = false;
+        let val = row[j];
+        if (val instanceof Date) {
+          if (headers[j].toLowerCase().includes('time')) {
+            val = Utilities.formatDate(val, Session.getScriptTimeZone(), "HH:mm");
+          } else if (headers[j] === 'date') {
+            val = Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          } else {
+            val = val.toISOString();
+          }
+        }
+        obj[headers[j]] = val !== undefined ? val : null;
+        if (val !== "") isEmpty = false;
       }
       if (!isEmpty) {
         rows.push(obj);
