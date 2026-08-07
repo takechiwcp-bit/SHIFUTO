@@ -83,5 +83,5 @@ export const startPolling = () => {
   useStore.getState().fetchData();
   setInterval(() => {
     useStore.getState().fetchData();
-  }, 3000);
+  }, 1000);
 };
