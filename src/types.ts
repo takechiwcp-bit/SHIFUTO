@@ -22,6 +22,7 @@ export interface Position {
   startTime: string; // HH:mm
   endTime: string; // HH:mm
   remarks: string;
+  isFixed?: boolean;
 }
 
 export interface Staff {

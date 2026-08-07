@@ -20,7 +20,7 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
   const eventPositions = Positions.filter(p => eventCategoryIds.includes(p.categoryId));
 
   const [posForm, setPosForm] = useState({
-    categoryId: '', name: '', requiredPeople: 1, unitTime: 15, startTime: '09:00', endTime: '18:00', remarks: ''
+    categoryId: '', name: '', requiredPeople: 1, unitTime: 15, startTime: '09:00', endTime: '18:00', remarks: '', isFixed: false
   });
 
   const handleCreateCategory = () => {
@@ -107,6 +107,7 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                   <th className="p-2">必要人数</th>
                   <th className="p-2">時間</th>
                   <th className="p-2">単位(分)</th>
+                  <th className="p-2">枠の種類</th>
                   <th className="p-2">備考</th>
                   <th className="p-2"></th>
                 </tr>
@@ -121,6 +122,11 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                       <td className="p-2">{pos.requiredPeople}名</td>
                       <td className="p-2">{pos.startTime} - {pos.endTime}</td>
                       <td className="p-2">{pos.unitTime}分</td>
+                      <td className="p-2">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${pos.isFixed ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                          {pos.isFixed ? '固定枠' : '変動枠'}
+                        </span>
+                      </td>
                       <td className="p-2 text-sm text-gray-500">{pos.remarks}</td>
                       <td className="p-2 text-right">
                         <div className="flex justify-end gap-2">
@@ -174,7 +180,20 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
               </div>
               <div className="form-group">
                 <label>単位時間 (分)</label>
-                <input type="number" min="15" step="15" value={posForm.unitTime} onChange={e => setPosForm({...posForm, unitTime: parseInt(e.target.value)})} />
+                <input type="number" min="15" step="15" value={posForm.unitTime} onChange={e => setPosForm({...posForm, unitTime: parseInt(e.target.value)})} disabled={posForm.isFixed} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="font-bold block mb-2">枠の種類</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="posType" checked={!posForm.isFixed} onChange={() => setPosForm({...posForm, isFixed: false})} />
+                  変動枠（単位時間ごとに入れ替わり）
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="posType" checked={posForm.isFixed} onChange={() => setPosForm({...posForm, isFixed: true})} />
+                  固定枠（1人が最初から最後まで通しで入る）
+                </label>
               </div>
             </div>
             <div className="form-row">
@@ -253,7 +272,20 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
               </div>
               <div className="form-group">
                 <label>単位時間 (分)</label>
-                <input type="number" min="15" step="15" value={editPositionModal.unitTime} onChange={e => setEditPositionModal({...editPositionModal, unitTime: parseInt(e.target.value)})} />
+                <input type="number" min="15" step="15" value={editPositionModal.unitTime} onChange={e => setEditPositionModal({...editPositionModal, unitTime: parseInt(e.target.value)})} disabled={editPositionModal.isFixed} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="font-bold block mb-2">枠の種類</label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="editPosType" checked={!editPositionModal.isFixed} onChange={() => setEditPositionModal({...editPositionModal, isFixed: false})} />
+                  変動枠（単位時間ごとに入れ替わり）
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="editPosType" checked={editPositionModal.isFixed} onChange={() => setEditPositionModal({...editPositionModal, isFixed: true})} />
+                  固定枠（1人が最初から最後まで通しで入る）
+                </label>
               </div>
             </div>
             <div className="form-row">

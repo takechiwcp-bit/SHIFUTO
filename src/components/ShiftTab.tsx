@@ -7,6 +7,30 @@ interface ShiftTabProps {
   eventId: string;
 }
 
+const generateTimeBlocks = (start: string, end: string, unitMins: number) => {
+  const blocks = [];
+  const parseTime = (t: string) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+  const formatTime = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  };
+
+  let current = parseTime(start);
+  const endTime = parseTime(end);
+
+  while (current < endTime) {
+    let next = current + unitMins;
+    if (next > endTime) next = endTime;
+    blocks.push(`${formatTime(current)}-${formatTime(next)}`);
+    current = next;
+  }
+  return blocks;
+};
+
 export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
   const { Positions, PositionCategories, Staff, Shifts, StaffTraits, dispatchAction } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
@@ -165,39 +189,76 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                         枠 {slotIndex + 1}
                       </div>
                       <div className="flex flex-col p-2 gap-2">
-                        {assignedShifts.length > 0 ? (
-                          assignedShifts.map(shift => {
-                            const staff = Staff.find(s => s.id === shift.staffId);
-                            const [start, end] = shift.timeBlock.split('-');
-                            return (
-                              <div key={shift.id || shift.timeBlock} className="flex items-center justify-between bg-indigo-50 border border-indigo-100 p-3 rounded-md">
-                                <div className="flex items-center gap-4">
-                                  <div className="font-bold text-indigo-900">{staff?.name || '不明なスタッフ'}</div>
-                                  <div className="flex items-center gap-1 text-indigo-700 text-sm bg-white px-2 py-1 rounded shadow-sm">
-                                    <Clock size={14} />
-                                    {start} 〜 {end}
+                        {pos.isFixed ? (
+                          // === 固定枠の場合 ===
+                          assignedShifts.length > 0 ? (
+                            assignedShifts.map(shift => {
+                              const staff = Staff.find(s => s.id === shift.staffId);
+                              const [start, end] = shift.timeBlock.split('-');
+                              return (
+                                <div key={shift.id || shift.timeBlock} className="flex items-center justify-between bg-indigo-50 border border-indigo-100 p-3 rounded-md">
+                                  <div className="flex items-center gap-4">
+                                    <div className="font-bold text-indigo-900">{staff?.name || '不明なスタッフ'}</div>
+                                    <div className="flex items-center gap-1 text-indigo-700 text-sm bg-white px-2 py-1 rounded shadow-sm">
+                                      <Clock size={14} />
+                                      {start} 〜 {end}
+                                    </div>
                                   </div>
+                                  <button 
+                                    className="text-white bg-red-400 hover:bg-red-500 rounded-full p-1 transition-colors"
+                                    onClick={() => handleRemove(pos.id, shift.timeBlock, slotIndex)}
+                                  >
+                                    <X size={16}/>
+                                  </button>
                                 </div>
-                                <button 
-                                  className="text-white bg-red-400 hover:bg-red-500 rounded-full p-1 transition-colors"
-                                  onClick={() => handleRemove(pos.id, shift.timeBlock, slotIndex)}
-                                >
-                                  <X size={16}/>
-                                </button>
+                              );
+                            })
+                          ) : (
+                            <button 
+                              className="py-3 w-full flex items-center justify-center gap-2 text-primary border border-dashed border-primary/30 rounded-md hover:bg-indigo-50 transition-colors font-bold text-sm bg-gray-50"
+                              onClick={() => setAssignModal({ positionId: pos.id, slotIndex, startTime: pos.startTime, endTime: pos.endTime })}
+                            >
+                              <UserPlus size={18} />
+                              この枠を通しで担当するスタッフを追加
+                            </button>
+                          )
+                        ) : (
+                          // === 変動枠の場合 ===
+                          generateTimeBlocks(pos.startTime, pos.endTime, pos.unitTime).map(timeBlock => {
+                            const [start, end] = timeBlock.split('-');
+                            const shiftForBlock = assignedShifts.find(s => s.timeBlock === timeBlock);
+                            
+                            return (
+                              <div key={timeBlock} className="flex items-stretch border border-gray-200 rounded overflow-hidden">
+                                <div className="bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700 flex items-center border-r border-gray-200 w-32 justify-center">
+                                  {start} 〜 {end}
+                                </div>
+                                <div className="flex-1">
+                                  {shiftForBlock ? (
+                                    <div className="flex items-center justify-between bg-indigo-50 px-4 py-2 h-full">
+                                      <div className="font-bold text-indigo-900">
+                                        {Staff.find(s => s.id === shiftForBlock.staffId)?.name || '不明なスタッフ'}
+                                      </div>
+                                      <button 
+                                        className="text-white bg-red-400 hover:bg-red-500 rounded-full p-1 transition-colors"
+                                        onClick={() => handleRemove(pos.id, timeBlock, slotIndex)}
+                                      >
+                                        <X size={14}/>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button 
+                                      className="w-full h-full py-2 flex items-center justify-center text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                                      onClick={() => setAssignModal({ positionId: pos.id, slotIndex, startTime: start, endTime: end })}
+                                    >
+                                      <UserPlus size={16} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             );
                           })
-                        ) : (
-                          <div className="text-gray-400 text-sm p-2 italic text-center">この枠にはまだシフトが割り当てられていません</div>
                         )}
-                        
-                        <button 
-                          className="mt-2 py-2 w-full flex items-center justify-center gap-2 text-primary border border-dashed border-primary/30 rounded-md hover:bg-red-50 transition-colors font-medium text-sm"
-                          onClick={() => setAssignModal({ positionId: pos.id, slotIndex, startTime: pos.startTime, endTime: pos.endTime })}
-                        >
-                          <UserPlus size={16} />
-                          シフトを追加
-                        </button>
                       </div>
                     </div>
                   );
@@ -223,21 +284,15 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
             <div className="flex gap-4 mb-6">
               <div className="flex-1">
                 <label className="text-sm text-gray-600 font-bold mb-1 block">開始時間</label>
-                <input 
-                  type="time" 
-                  value={assignModal.startTime} 
-                  onChange={(e) => setAssignModal({...assignModal, startTime: e.target.value})}
-                  className="w-full p-2 border rounded"
-                />
+                <div className="w-full p-2 border rounded bg-gray-100 text-gray-700">
+                  {assignModal.startTime}
+                </div>
               </div>
               <div className="flex-1">
                 <label className="text-sm text-gray-600 font-bold mb-1 block">終了時間</label>
-                <input 
-                  type="time" 
-                  value={assignModal.endTime} 
-                  onChange={(e) => setAssignModal({...assignModal, endTime: e.target.value})}
-                  className="w-full p-2 border rounded"
-                />
+                <div className="w-full p-2 border rounded bg-gray-100 text-gray-700">
+                  {assignModal.endTime}
+                </div>
               </div>
             </div>
 
