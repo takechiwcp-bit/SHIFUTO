@@ -65,6 +65,9 @@ function doPost(e) {
       case 'BULK_ASSIGN_SHIFTS':
         result = bulkAssignShifts(payload);
         break;
+      case 'CLEAR_ALL_SHIFTS':
+        result = clearAllShifts();
+        break;
       case 'REMOVE_SHIFT':
         result = removeShift(payload.positionId, payload.timeBlock, payload.slotIndex);
         break;
@@ -341,4 +344,13 @@ function bulkAssignShifts(payloads) {
   }
   
   return payloads;
+}
+
+function clearAllShifts() {
+  const sheet = getOrCreateSheet('Shifts');
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    sheet.deleteRows(2, lastRow - 1);
+  }
+  return { success: true };
 }

@@ -83,7 +83,12 @@ export const ShiftTableTab: React.FC<ShiftTableTabProps> = ({ eventId }) => {
                     {staff.name}
                   </div>
                   {globalTimeBlocks.map(tb => {
-                    const shift = Shifts.find(s => s.staffId === staff.id && s.timeBlock === tb);
+                    const shift = Shifts.find(s => {
+                      if (s.staffId !== staff.id) return false;
+                      const [start, end] = s.timeBlock.split('-');
+                      if (!start || !end) return s.timeBlock === tb; // Fallback for old single-time blocks
+                      return tb >= start && tb < end; // String comparison works for HH:mm
+                    });
                     const position = shift ? Positions.find(p => p.id === shift.positionId) : null;
                     
                     const isTimeAvailable = (!staff.availableStartTime || staff.availableStartTime <= tb) && (!staff.availableEndTime || staff.availableEndTime > tb);
