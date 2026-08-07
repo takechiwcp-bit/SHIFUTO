@@ -202,7 +202,7 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                               <div className="slot-indicator assigned flex justify-between items-center h-full w-full p-2">
                                 <span className="truncate text-xs font-bold">{assignedStaff.name}</span>
                                 <button 
-                                  className="text-white hover:text-red-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="text-white bg-black/20 hover:bg-red-500 rounded-full p-1 transition-colors"
                                   onClick={() => handleRemove(pos.id, tb, slotIndex)}
                                 >
                                   <X size={14}/>

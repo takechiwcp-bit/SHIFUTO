@@ -67,29 +67,29 @@ export const ShiftTableTab: React.FC<ShiftTableTabProps> = ({ eventId }) => {
         </div>
         <div className="overflow-x-auto pb-4">
           <div className="shift-grid" style={{ minWidth: 'max-content' }}>
-            <div className="shift-header-row" style={{ gridTemplateColumns: `100px repeat(${Staff.length}, minmax(120px, 1fr))` }}>
-              <div className="shift-header-cell sticky left-0 z-20 bg-gray-100 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">時間 \ 名前</div>
-              {Staff.map(staff => (
-                <div key={staff.id} className="shift-header-cell bg-gray-50 text-gray-700 font-bold truncate px-2">
-                  {staff.name}
+            <div className="shift-header-row" style={{ gridTemplateColumns: `120px repeat(${globalTimeBlocks.length}, minmax(80px, 1fr))` }}>
+              <div className="shift-header-cell sticky left-0 z-20 bg-gray-100 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">名前 \ 時間</div>
+              {globalTimeBlocks.map(tb => (
+                <div key={tb} className="shift-header-cell bg-gray-50 text-gray-700 font-bold truncate px-2">
+                  {tb}
                 </div>
               ))}
             </div>
             
-            {globalTimeBlocks.map(tb => {
+            {Staff.map(staff => {
               return (
-                <div key={tb} className="shift-data-row border-b border-gray-100 hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: `100px repeat(${Staff.length}, minmax(120px, 1fr))` }}>
+                <div key={staff.id} className="shift-data-row border-b border-gray-100 hover:bg-gray-50 transition-colors" style={{ gridTemplateColumns: `120px repeat(${globalTimeBlocks.length}, minmax(80px, 1fr))` }}>
                   <div className="shift-header-cell sticky left-0 z-10 bg-white border-r flex items-center justify-center font-medium shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] text-gray-600">
-                    {tb}
+                    {staff.name}
                   </div>
-                  {Staff.map(staff => {
+                  {globalTimeBlocks.map(tb => {
                     const shift = Shifts.find(s => s.staffId === staff.id && s.timeBlock === tb);
                     const position = shift ? Positions.find(p => p.id === shift.positionId) : null;
                     
                     const isTimeAvailable = (!staff.availableStartTime || staff.availableStartTime <= tb) && (!staff.availableEndTime || staff.availableEndTime > tb);
                     
                     return (
-                      <div key={staff.id} className={`shift-cell p-1 border-r border-gray-100 flex items-center justify-center ${!isTimeAvailable && !position ? 'bg-gray-50' : ''}`}>
+                      <div key={tb} className={`shift-cell p-1 border-r border-gray-100 flex items-center justify-center ${!isTimeAvailable && !position ? 'bg-gray-50' : ''}`}>
                         {position ? (
                           <div className="w-full h-full bg-indigo-100 text-indigo-700 rounded text-xs font-bold flex flex-col items-center justify-center px-1 text-center border border-indigo-200">
                             <span className="truncate w-full">{position.name}</span>
