@@ -250,9 +250,14 @@ function assignShift(payload) {
   const slotIdx = headers.indexOf('slotIndex');
   
   for (let i = 1; i < values.length; i++) {
-    if (values[i][posIdx] === payload.positionId && 
-        values[i][timeIdx] === payload.timeBlock && 
-        values[i][slotIdx] === payload.slotIndex) {
+    let cellTime = values[i][timeIdx];
+    if (cellTime instanceof Date) {
+      cellTime = Utilities.formatDate(cellTime, Session.getScriptTimeZone(), "HH:mm");
+    }
+    
+    if (String(values[i][posIdx]) === String(payload.positionId) && 
+        String(cellTime) === String(payload.timeBlock) && 
+        String(values[i][slotIdx]) === String(payload.slotIndex)) {
        const newRow = headers.map((header, j) => {
           return payload[header] !== undefined ? payload[header] : values[i][j];
        });
@@ -276,9 +281,14 @@ function removeShift(positionId, timeBlock, slotIndex) {
   const slotIdx = headers.indexOf('slotIndex');
   
   for (let i = 1; i < values.length; i++) {
-    if (values[i][posIdx] === positionId && 
-        values[i][timeIdx] === timeBlock && 
-        values[i][slotIdx] === slotIndex) {
+    let cellTime = values[i][timeIdx];
+    if (cellTime instanceof Date) {
+      cellTime = Utilities.formatDate(cellTime, Session.getScriptTimeZone(), "HH:mm");
+    }
+
+    if (String(values[i][posIdx]) === String(positionId) && 
+        String(cellTime) === String(timeBlock) && 
+        String(values[i][slotIdx]) === String(slotIndex)) {
       sheet.deleteRow(i + 1);
       return true;
     }
@@ -300,9 +310,13 @@ function bulkAssignShifts(payloads) {
   for (const payload of payloads) {
     let updated = false;
     for (let i = 1; i < values.length; i++) {
-      if (values[i][posIdx] === payload.positionId && 
-          values[i][timeIdx] === payload.timeBlock && 
-          values[i][slotIdx] === payload.slotIndex) {
+      let cellTime = values[i][timeIdx];
+      if (cellTime instanceof Date) {
+        cellTime = Utilities.formatDate(cellTime, Session.getScriptTimeZone(), "HH:mm");
+      }
+      if (String(values[i][posIdx]) === String(payload.positionId) && 
+          String(cellTime) === String(payload.timeBlock) && 
+          String(values[i][slotIdx]) === String(payload.slotIndex)) {
          const newRow = headers.map((header, j) => {
             return payload[header] !== undefined ? payload[header] : values[i][j];
          });
