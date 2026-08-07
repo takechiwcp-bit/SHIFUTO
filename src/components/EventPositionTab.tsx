@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../store';
-import { Plus, Save, Trash2 } from 'lucide-react';
+import { Plus, Save, Trash2, Pencil } from 'lucide-react';
 
 interface EventPositionTabProps {
   eventId: string;
@@ -11,6 +11,8 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
   
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showPosModal, setShowPosModal] = useState(false);
+  const [editCategoryModal, setEditCategoryModal] = useState<{ id: string; name: string } | null>(null);
+  const [editPositionModal, setEditPositionModal] = useState<any>(null);
   
   // Filter for this event
   const eventCategories = PositionCategories.filter(c => c.eventId === eventId);
@@ -59,16 +61,24 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
             {eventCategories.map(cat => (
               <div key={cat.id} className="p-2 border-b flex justify-between items-center group">
                 <span>{cat.name}</span>
-                <button 
-                  className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => {
-                    if (window.confirm(`カテゴリー「${cat.name}」を本当に削除しますか？\n(紐づくポジションも削除されます)`)) {
-                      dispatchAction('DELETE_CATEGORY', { id: cat.id });
-                    }
-                  }}
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    className="text-gray-400 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => setEditCategoryModal({ id: cat.id, name: cat.name })}
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button 
+                    className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => {
+                      if (window.confirm(`カテゴリー「${cat.name}」を本当に削除しますか？\n(紐づくポジションも削除されます)`)) {
+                        dispatchAction('DELETE_CATEGORY', { id: cat.id });
+                      }
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -113,16 +123,24 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                       <td className="p-2">{pos.unitTime}分</td>
                       <td className="p-2 text-sm text-gray-500">{pos.remarks}</td>
                       <td className="p-2 text-right">
-                        <button 
-                          className="text-gray-400 hover:text-red-500 p-1"
-                          onClick={() => {
-                            if (window.confirm(`ポジション「${pos.name}」を本当に削除しますか？`)) {
-                              dispatchAction('DELETE_POSITION', { id: pos.id });
-                            }
-                          }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button 
+                            className="text-gray-400 hover:text-indigo-500 p-1"
+                            onClick={() => setEditPositionModal(pos)}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button 
+                            className="text-gray-400 hover:text-red-500 p-1"
+                            onClick={() => {
+                              if (window.confirm(`ポジション「${pos.name}」を本当に削除しますか？`)) {
+                                dispatchAction('DELETE_POSITION', { id: pos.id });
+                              }
+                            }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -181,6 +199,88 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                 disabled={!posForm.categoryId || !posForm.name}
               >
                 <Save size={18}/> 保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Category Modal */}
+      {editCategoryModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2 className="mb-4">カテゴリーの修正</h2>
+            <div className="form-group">
+              <label>カテゴリー名</label>
+              <input type="text" value={editCategoryModal.name} onChange={e => setEditCategoryModal({...editCategoryModal, name: e.target.value})} />
+            </div>
+            <div className="flex gap-4 mt-6">
+              <button className="btn btn-secondary flex-1" onClick={() => setEditCategoryModal(null)}>キャンセル</button>
+              <button 
+                className="btn btn-primary flex-1" 
+                onClick={() => {
+                  if (!editCategoryModal.name) return;
+                  dispatchAction('UPDATE_CATEGORY', { id: editCategoryModal.id, eventId, name: editCategoryModal.name });
+                  setEditCategoryModal(null);
+                }}
+              >
+                保存する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Position Modal */}
+      {editPositionModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2 className="mb-4">ポジションの修正</h2>
+            <div className="form-group">
+              <label>カテゴリー</label>
+              <select value={editPositionModal.categoryId} onChange={e => setEditPositionModal({...editPositionModal, categoryId: e.target.value})}>
+                {eventCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>ポジション名</label>
+              <input type="text" value={editPositionModal.name} onChange={e => setEditPositionModal({...editPositionModal, name: e.target.value})} />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>必要人数</label>
+                <input type="number" min="1" value={editPositionModal.requiredPeople} onChange={e => setEditPositionModal({...editPositionModal, requiredPeople: parseInt(e.target.value)})} />
+              </div>
+              <div className="form-group">
+                <label>単位時間 (分)</label>
+                <input type="number" min="15" step="15" value={editPositionModal.unitTime} onChange={e => setEditPositionModal({...editPositionModal, unitTime: parseInt(e.target.value)})} />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>開始時間 (5:00~23:00)</label>
+                <input type="time" min="05:00" max="23:00" value={editPositionModal.startTime} onChange={e => setEditPositionModal({...editPositionModal, startTime: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label>終了時間 (5:00~23:00)</label>
+                <input type="time" min="05:00" max="23:00" value={editPositionModal.endTime} onChange={e => setEditPositionModal({...editPositionModal, endTime: e.target.value})} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>備考</label>
+              <input type="text" value={editPositionModal.remarks} onChange={e => setEditPositionModal({...editPositionModal, remarks: e.target.value})} />
+            </div>
+            <div className="flex gap-4 mt-6">
+              <button className="btn btn-secondary flex-1" onClick={() => setEditPositionModal(null)}>キャンセル</button>
+              <button 
+                className="btn btn-primary flex-1" 
+                onClick={() => {
+                  if (!editPositionModal.name) return;
+                  dispatchAction('UPDATE_POSITION', { ...editPositionModal });
+                  setEditPositionModal(null);
+                }}
+              >
+                保存する
               </button>
             </div>
           </div>

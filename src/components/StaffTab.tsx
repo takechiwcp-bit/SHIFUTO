@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../store';
-import { User, Trash2 } from 'lucide-react';
+import { User, Trash2, Pencil } from 'lucide-react';
 
 interface StaffTabProps {
   eventId: string;
@@ -15,6 +15,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
   const [newStaffRemarks, setNewStaffRemarks] = useState('');
   
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  const [editStaffModal, setEditStaffModal] = useState<{ id: string; name: string; availableStartTime: string; availableEndTime: string; remarks: string } | null>(null);
 
   const eventCategories = PositionCategories.filter(c => c.eventId === eventId);
   const eventCategoryIds = eventCategories.map(c => c.id);
@@ -86,18 +87,35 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
                       </div>
                     )}
                   </div>
-                  <button 
-                    className="text-gray-400 hover:text-red-500 p-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (window.confirm(`${s.name} さんを本当に削除しますか？`)) {
-                        dispatchAction('DELETE_STAFF', { id: s.id });
-                        if (selectedStaffId === s.id) setSelectedStaffId(null);
-                      }
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      className="text-gray-400 hover:text-indigo-500 p-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditStaffModal({
+                          id: s.id,
+                          name: s.name,
+                          availableStartTime: s.availableStartTime || '09:00',
+                          availableEndTime: s.availableEndTime || '18:00',
+                          remarks: s.remarks || ''
+                        });
+                      }}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button 
+                      className="text-gray-400 hover:text-red-500 p-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`${s.name} さんを本当に削除しますか？`)) {
+                          dispatchAction('DELETE_STAFF', { id: s.id });
+                          if (selectedStaffId === s.id) setSelectedStaffId(null);
+                        }
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
                 <div className="text-xs text-gray-500 truncate">{s.remarks}</div>
               </div>
@@ -154,6 +172,51 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
           </div>
         )}
       </div>
+
+      {editStaffModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2 className="mb-4">スタッフの修正</h2>
+            <div className="form-group">
+              <label>名前</label>
+              <input type="text" value={editStaffModal.name} onChange={e => setEditStaffModal({...editStaffModal, name: e.target.value})} />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>入れる時間 (開始)</label>
+                <input type="time" value={editStaffModal.availableStartTime} onChange={e => setEditStaffModal({...editStaffModal, availableStartTime: e.target.value})} />
+              </div>
+              <div className="form-group">
+                <label>入れる時間 (終了)</label>
+                <input type="time" value={editStaffModal.availableEndTime} onChange={e => setEditStaffModal({...editStaffModal, availableEndTime: e.target.value})} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>備考</label>
+              <textarea value={editStaffModal.remarks} onChange={e => setEditStaffModal({...editStaffModal, remarks: e.target.value})} rows={2}></textarea>
+            </div>
+            <div className="flex gap-4 mt-6">
+              <button className="btn btn-secondary flex-1" onClick={() => setEditStaffModal(null)}>キャンセル</button>
+              <button 
+                className="btn btn-primary flex-1" 
+                onClick={() => {
+                  if (!editStaffModal.name) return;
+                  dispatchAction('UPDATE_STAFF', {
+                    id: editStaffModal.id,
+                    name: editStaffModal.name,
+                    availableStartTime: editStaffModal.availableStartTime,
+                    availableEndTime: editStaffModal.availableEndTime,
+                    remarks: editStaffModal.remarks
+                  });
+                  setEditStaffModal(null);
+                }}
+              >
+                保存する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
