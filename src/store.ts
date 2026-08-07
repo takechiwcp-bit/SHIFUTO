@@ -24,7 +24,6 @@ export const useStore = create<StoreState>((set) => ({
   isLoading: true,
   
   fetchData: async () => {
-    set({ isLoading: true });
     try {
       const response = await fetch(API_URL);
       const result = await response.json();
