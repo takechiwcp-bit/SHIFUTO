@@ -8,27 +8,36 @@ interface ShiftTabProps {
 }
 
 const generateTimeBlocks = (start: string, end: string, unitMins: number) => {
+  if (!start || !end || !unitMins) return [];
   const blocks = [];
-  const parseTime = (t: string) => {
-    const [h, m] = t.split(':').map(Number);
-    return h * 60 + m;
-  };
-  const formatTime = (mins: number) => {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-  };
+  try {
+    const parseTime = (t: string) => {
+      if (!t || typeof t !== 'string' || !t.includes(':')) return 0;
+      const [h, m] = t.split(':').map(Number);
+      return (h || 0) * 60 + (m || 0);
+    };
+    const formatTime = (mins: number) => {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    };
 
-  let current = parseTime(start);
-  const endTime = parseTime(end);
+    let current = parseTime(start);
+    const endTime = parseTime(end);
 
-  while (current < endTime) {
-    let next = current + unitMins;
-    if (next > endTime) next = endTime;
-    blocks.push(`${formatTime(current)}-${formatTime(next)}`);
-    current = next;
+    let iterations = 0;
+    while (current < endTime && iterations < 100) {
+      iterations++;
+      let next = current + unitMins;
+      if (next > endTime) next = endTime;
+      blocks.push(`${formatTime(current)}-${formatTime(next)}`);
+      current = next;
+    }
+    return blocks;
+  } catch (e) {
+    console.error(e);
+    return [];
   }
-  return blocks;
 };
 
 export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
