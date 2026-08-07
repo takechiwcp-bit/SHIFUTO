@@ -62,6 +62,9 @@ function doPost(e) {
       case 'ASSIGN_SHIFT':
         result = assignShift(payload);
         break;
+      case 'BULK_ASSIGN_SHIFTS':
+        result = bulkAssignShifts(payload);
+        break;
       case 'REMOVE_SHIFT':
         result = removeShift(payload.positionId, payload.timeBlock, payload.slotIndex);
         break;
@@ -281,4 +284,47 @@ function removeShift(positionId, timeBlock, slotIndex) {
     }
   }
   return false;
+}
+
+function bulkAssignShifts(payloads) {
+  const sheet = getOrCreateSheet('Shifts');
+  const dataRange = sheet.getDataRange();
+  const values = dataRange.getValues();
+  const headers = getHeadersForSheet('Shifts');
+  const posIdx = headers.indexOf('positionId');
+  const timeIdx = headers.indexOf('timeBlock');
+  const slotIdx = headers.indexOf('slotIndex');
+  
+  const rowsToAppend = [];
+  
+  for (const payload of payloads) {
+    let updated = false;
+    for (let i = 1; i < values.length; i++) {
+      if (values[i][posIdx] === payload.positionId && 
+          values[i][timeIdx] === payload.timeBlock && 
+          values[i][slotIdx] === payload.slotIndex) {
+         const newRow = headers.map((header, j) => {
+            return payload[header] !== undefined ? payload[header] : values[i][j];
+         });
+         sheet.getRange(i + 1, 1, 1, headers.length).setValues([newRow]);
+         values[i] = newRow; 
+         updated = true;
+         break;
+      }
+    }
+    
+    if (!updated) {
+      payload.id = payload.id || Utilities.getUuid();
+      const newRow = headers.map(header => payload[header] !== undefined ? payload[header] : "");
+      rowsToAppend.push(newRow);
+      values.push(newRow);
+    }
+  }
+  
+  if (rowsToAppend.length > 0) {
+    const startRow = sheet.getLastRow() + 1;
+    sheet.getRange(startRow, 1, rowsToAppend.length, headers.length).setValues(rowsToAppend);
+  }
+  
+  return payloads;
 }
