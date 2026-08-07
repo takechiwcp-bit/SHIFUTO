@@ -10,6 +10,8 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
   const { Staff, Positions, PositionCategories, StaffTraits, dispatchAction } = useStore();
   
   const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffStartTime, setNewStaffStartTime] = useState('09:00');
+  const [newStaffEndTime, setNewStaffEndTime] = useState('18:00');
   const [newStaffRemarks, setNewStaffRemarks] = useState('');
   
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
@@ -23,9 +25,13 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
     dispatchAction('ADD_STAFF', {
       id: crypto.randomUUID(),
       name: newStaffName,
+      availableStartTime: newStaffStartTime,
+      availableEndTime: newStaffEndTime,
       remarks: newStaffRemarks
     });
     setNewStaffName('');
+    setNewStaffStartTime('09:00');
+    setNewStaffEndTime('18:00');
     setNewStaffRemarks('');
   };
 
@@ -46,6 +52,16 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
           <label>名前</label>
           <input type="text" value={newStaffName} onChange={e => setNewStaffName(e.target.value)} placeholder="例: 山田太郎" />
         </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label>入れる時間 (開始)</label>
+            <input type="time" value={newStaffStartTime} onChange={e => setNewStaffStartTime(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>入れる時間 (終了)</label>
+            <input type="time" value={newStaffEndTime} onChange={e => setNewStaffEndTime(e.target.value)} />
+          </div>
+        </div>
         <div className="form-group">
           <label>備考</label>
           <textarea value={newStaffRemarks} onChange={e => setNewStaffRemarks(e.target.value)} rows={2}></textarea>
@@ -61,7 +77,14 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedStaffId === s.id ? 'border-primary bg-indigo-50' : 'border-gray-200 hover:bg-gray-50'}`}
                 onClick={() => setSelectedStaffId(s.id)}
               >
-                <div className="font-medium">{s.name}</div>
+                <div className="flex justify-between items-center mb-1">
+                  <div className="font-medium">{s.name}</div>
+                  {(s.availableStartTime && s.availableEndTime) && (
+                    <div className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      {s.availableStartTime}〜{s.availableEndTime}
+                    </div>
+                  )}
+                </div>
                 <div className="text-xs text-gray-500 truncate">{s.remarks}</div>
               </div>
             ))}

@@ -146,15 +146,26 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                     if (trait === '△') badgeColor = 'bg-yellow-100 text-yellow-700';
                     if (trait === '×') badgeColor = 'bg-red-100 text-red-700';
 
+                    const isAvailable = (!s.availableStartTime || s.availableStartTime <= assignModal.timeBlock) && 
+                                        (!s.availableEndTime || s.availableEndTime > assignModal.timeBlock);
+
                     return (
                       <div 
                         key={s.id}
-                        className="flex justify-between items-center p-3 border rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors"
+                        className={`flex justify-between items-center p-3 border rounded-lg cursor-pointer transition-colors ${!isAvailable ? 'opacity-50 bg-gray-50 hover:bg-gray-100' : 'hover:bg-indigo-50'}`}
                         onClick={() => handleAssign(s.id)}
                       >
                         <div>
-                          <div className="font-semibold">{s.name}</div>
-                          {s.remarks && <div className="text-xs text-gray-500">{s.remarks}</div>}
+                          <div className="font-semibold flex items-center gap-2">
+                            {s.name}
+                            {!isAvailable && <span className="text-xs bg-red-500 text-white px-1 rounded">時間外</span>}
+                          </div>
+                          {(s.availableStartTime && s.availableEndTime) && (
+                            <div className="text-xs text-gray-500 mb-1">
+                              可能時間: {s.availableStartTime}〜{s.availableEndTime}
+                            </div>
+                          )}
+                          {s.remarks && <div className="text-xs text-gray-400">{s.remarks}</div>}
                         </div>
                         {trait && <span className={`px-2 py-1 rounded text-xs font-bold ${badgeColor}`}>{trait}</span>}
                       </div>

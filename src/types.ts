@@ -25,6 +25,8 @@ export interface Position {
 export interface Staff {
   id: string;
   name: string;
+  availableStartTime?: string; // HH:mm
+  availableEndTime?: string; // HH:mm
   remarks: string;
 }
 

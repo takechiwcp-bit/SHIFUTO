@@ -107,7 +107,7 @@ function getHeadersForSheet(sheetName) {
     case 'Events': return ['id', 'name', 'date', 'remarks'];
     case 'PositionCategories': return ['id', 'eventId', 'name'];
     case 'Positions': return ['id', 'categoryId', 'name', 'requiredPeople', 'unitTime', 'startTime', 'endTime', 'remarks'];
-    case 'Staff': return ['id', 'name', 'remarks'];
+    case 'Staff': return ['id', 'name', 'availableStartTime', 'availableEndTime', 'remarks'];
     case 'StaffTraits': return ['staffId', 'positionId', 'trait'];
     case 'Shifts': return ['id', 'positionId', 'timeBlock', 'slotIndex', 'staffId'];
     default: return [];
