@@ -186,8 +186,8 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                   
                   // Sort shifts by start time
                   assignedShifts.sort((a, b) => {
-                    const startA = a.timeBlock.split('-')[0] || '';
-                    const startB = b.timeBlock.split('-')[0] || '';
+                    const startA = (a.timeBlock || '').split('-')[0] || '';
+                    const startB = (b.timeBlock || '').split('-')[0] || '';
                     return startA.localeCompare(startB);
                   });
 
@@ -203,7 +203,7 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                           assignedShifts.length > 0 ? (
                             assignedShifts.map(shift => {
                               const staff = Staff.find(s => s.id === shift.staffId);
-                              const [start, end] = shift.timeBlock.split('-');
+                              const [start, end] = (shift.timeBlock || '').split('-');
                               return (
                                 <div key={shift.id || shift.timeBlock} className="flex items-center justify-between bg-indigo-50 border border-indigo-100 p-3 rounded-md">
                                   <div className="flex items-center gap-4">
