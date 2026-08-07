@@ -9,6 +9,7 @@ interface ShiftTabProps {
 
 export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
   const { Positions, PositionCategories, Staff, Shifts, StaffTraits, dispatchAction } = useStore();
+  const [searchQuery, setSearchQuery] = useState('');
   
 
 
@@ -241,12 +242,21 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
             </div>
 
             <p className="text-sm font-bold text-gray-700 mb-2">割り当てるスタッフを選択</p>
-            <div className="max-h-64 overflow-y-auto pr-2 border rounded-md p-2 bg-gray-50">
-              {Staff.length === 0 ? (
-                <p className="text-gray-500 text-sm">スタッフが登録されていません。</p>
+            <div className="mb-2">
+              <input 
+                type="text" 
+                placeholder="スタッフ名を検索..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full p-2 border rounded text-sm"
+              />
+            </div>
+            <div className="h-[50vh] max-h-96 overflow-y-auto pr-2 border rounded-md p-2 bg-gray-50 flex flex-col gap-2">
+              {Staff.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
+                <p className="text-gray-500 text-sm">該当するスタッフがいません。</p>
               ) : (
-                <div className="flex flex-col gap-2">
-                  {Staff.map(s => {
+                <>
+                  {Staff.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map(s => {
                     const trait = StaffTraits.find(t => t.staffId === s.id && t.positionId === assignModal.positionId)?.trait;
                     let badgeColor = 'bg-gray-100 text-gray-600';
                     if (trait === '◎') badgeColor = 'bg-blue-100 text-blue-700';
@@ -278,7 +288,7 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                       </div>
                     )
                   })}
-                </div>
+                </>
               )}
             </div>
           </div>
