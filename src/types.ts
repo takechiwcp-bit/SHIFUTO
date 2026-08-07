@@ -1,5 +1,13 @@
-export interface Category {
+export interface AppEvent {
   id: string;
+  name: string;
+  date: string;
+  remarks: string;
+}
+
+export interface PositionCategory {
+  id: string;
+  eventId: string;
   name: string;
 }
 
@@ -7,44 +15,38 @@ export interface Position {
   id: string;
   categoryId: string;
   name: string;
-  color: string;
-  startTime: string;
-  endTime: string;
-  requiredCount: number;
+  requiredPeople: number;
+  unitTime: number; // minutes
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  remarks: string;
 }
 
 export interface Staff {
   id: string;
   name: string;
-  availableStart: string; // "HH:mm" format
-  availableEnd: string;   // "HH:mm" format
-  notes: string;
+  remarks: string;
 }
 
-export interface ShiftEntry {
+export interface StaffTrait {
   staffId: string;
   positionId: string;
-  timeSlot: string; // "HH:mm" format
+  trait: string;
 }
 
-export interface EventConfig {
-  name: string;
-  date: string; // "YYYY-MM-DD"
-  startTime: string; // "HH:mm"
-  endTime: string; // "HH:mm"
-  intervalMinutes: number;
-  maxContinuousWorkMinutes: number;
-}
-
-export interface ShiftEvent {
+export interface Shift {
   id: string;
-  eventConfig: EventConfig;
-  categories: Category[];
-  positions: Position[];
-  staffList: Staff[];
-  shifts: ShiftEntry[];
-  lastUpdated: number;
-  payload?: string;
-  staffCount?: number;
-  deletedStaffIds?: string[];
+  positionId: string;
+  timeBlock: string; // HH:mm
+  slotIndex: number;
+  staffId: string;
+}
+
+export interface AppState {
+  Events: AppEvent[];
+  PositionCategories: PositionCategory[];
+  Positions: Position[];
+  Staff: Staff[];
+  StaffTraits: StaffTrait[];
+  Shifts: Shift[];
 }
