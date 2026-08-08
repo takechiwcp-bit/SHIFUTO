@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../store';
-import { Calendar, UserPlus, X, Wand2, Users, Clock, Search } from 'lucide-react';
+import { Calendar, UserPlus, X, Wand2, Users, Clock, Search, ChevronDown, ChevronRight, Folder } from 'lucide-react';
 import type { Staff, Shift } from '../types';
 
 interface ShiftTabProps {
@@ -46,6 +46,7 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [isSortedByTrait, setIsSortedByTrait] = useState(false);
+  const [expandedCategoryIds, setExpandedCategoryIds] = useState<string[]>([]);
   const eventCategories = PositionCategories.filter(c => c.eventId === eventId);
   const eventCategoryIds = eventCategories.map(c => c.id);
   const eventPositions = Positions.filter(p => eventCategoryIds.includes(p.categoryId));
@@ -200,28 +201,44 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
           if (filteredPositions.length === 0) return null;
 
           return (
-            <div key={category.id} className="flex flex-col gap-4">
-              <div className="flex items-center gap-3 border-b-2 border-indigo-200 pb-2">
-                <h2 className="text-xl font-bold text-gray-800">{category.name}</h2>
+            <div key={category.id} className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+              <div 
+                className="flex items-center gap-3 pb-2 cursor-pointer group"
+                onClick={() => {
+                  setExpandedCategoryIds(prev => 
+                    prev.includes(category.id) 
+                      ? prev.filter(id => id !== category.id) 
+                      : [...prev, category.id]
+                  );
+                }}
+              >
+                <div className="bg-indigo-50 p-2 rounded-lg text-primary group-hover:bg-indigo-100 transition-colors">
+                  <Folder size={20} />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800 flex-1">{category.name}</h2>
                 {category.allowedRole && category.allowedRole !== '制限なし' && (
                   <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold shadow-sm">
                     {category.allowedRole}専用
                   </span>
                 )}
+                <div className="text-gray-400">
+                  {(globalSearchQuery !== '' || expandedCategoryIds.includes(category.id)) ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
+                </div>
               </div>
 
-              <div className="grid gap-6">
-                {filteredPositions.map(pos => {
-                  return (
-                    <div key={pos.id} className="shift-container bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                      <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
-                        <div>
-                          <h3 className="text-lg font-bold text-primary">{pos.name}</h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            設定時間: {pos.startTime}〜{pos.endTime} / 必要人数: {pos.requiredPeople}名 / 備考: {pos.remarks}
-                          </p>
+              {(globalSearchQuery !== '' || expandedCategoryIds.includes(category.id)) && (
+                <div className="grid gap-6 mt-4 pt-4 border-t border-gray-100">
+                  {filteredPositions.map(pos => {
+                    return (
+                      <div key={pos.id} className="shift-container bg-white rounded-xl border border-gray-200 overflow-hidden">
+                        <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
+                          <div>
+                            <h3 className="text-lg font-bold text-primary">{pos.name}</h3>
+                            <p className="text-sm text-gray-500 mt-1">
+                              設定時間: {pos.startTime}〜{pos.endTime} / 必要人数: {pos.requiredPeople}名 / 備考: {pos.remarks}
+                            </p>
+                          </div>
                         </div>
-                      </div>
                       
                       <div className="flex flex-col p-4 gap-4">
                         {Array.from({ length: pos.requiredPeople }).map((_, slotIndex) => {
@@ -320,6 +337,7 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                   );
                 })}
               </div>
+              )}
             </div>
           );
         })}
