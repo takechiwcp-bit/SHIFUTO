@@ -360,7 +360,17 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                     });
                     const isAssigned = !!overlappingShift;
                     const overlappingPosition = isAssigned ? Positions.find(p => p.id === overlappingShift.positionId) : null;
-                    const isDisabled = !isAvailable || isAssigned;
+                    
+                    const targetPosition = Positions.find(p => p.id === assignModal.positionId);
+                    const targetCategory = targetPosition ? PositionCategories.find(c => c.id === targetPosition.categoryId) : null;
+                    
+                    let roleMismatch = false;
+                    if (targetCategory && targetCategory.allowedRole && targetCategory.allowedRole !== '制限なし') {
+                      if (targetCategory.allowedRole === 'WCP' && s.role !== 'WCP') roleMismatch = true;
+                      if (targetCategory.allowedRole === 'ボランティア' && s.role !== 'ボランティア') roleMismatch = true;
+                    }
+
+                    const isDisabled = !isAvailable || isAssigned || roleMismatch;
                     
                     // 連続勤務時間の計算 (Calculate continuous work minutes)
                     let needsBreak = false;
@@ -420,6 +430,7 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                             {s.name}
                             {!isAvailable && <span className="text-xs bg-red-500 text-white px-1 rounded">時間外</span>}
                             {isAssigned && <span className="text-xs bg-gray-500 text-white px-1 rounded">{overlappingPosition?.name || '他シフトあり'}</span>}
+                            {roleMismatch && <span className="text-xs bg-gray-800 text-white px-1 rounded">権限不足</span>}
                             {(!isDisabled && needsBreak) && <span className="text-xs bg-yellow-500 text-white px-1 rounded">⚠️休憩推奨</span>}
                           </div>
                           {(s.availableStartTime && s.availableEndTime) && (

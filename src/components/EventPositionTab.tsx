@@ -10,8 +10,9 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
   const { PositionCategories, Positions, dispatchAction } = useStore();
   
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryRole, setNewCategoryRole] = useState<'WCP' | 'ボランティア' | '制限なし'>('制限なし');
   const [showPosModal, setShowPosModal] = useState(false);
-  const [editCategoryModal, setEditCategoryModal] = useState<{ id: string; name: string } | null>(null);
+  const [editCategoryModal, setEditCategoryModal] = useState<{ id: string; name: string; allowedRole?: 'WCP' | 'ボランティア' | '制限なし' } | null>(null);
   const [editPositionModal, setEditPositionModal] = useState<any>(null);
   
   // Filter for this event
@@ -35,9 +36,11 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
     dispatchAction('ADD_CATEGORY', {
       id: crypto.randomUUID(),
       eventId: eventId,
-      name: newCategoryName
+      name: newCategoryName,
+      allowedRole: newCategoryRole
     });
     setNewCategoryName('');
+    setNewCategoryRole('制限なし');
   };
 
   const handleCreatePosition = () => {
@@ -60,6 +63,14 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
             <label>カテゴリー名</label>
             <input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="例: 飲食エリア" />
           </div>
+          <div className="form-group">
+            <label>権限</label>
+            <select value={newCategoryRole} onChange={e => setNewCategoryRole(e.target.value as any)}>
+              <option value="制限なし">制限なし (誰でも可)</option>
+              <option value="ボランティア">ボランティア専用</option>
+              <option value="WCP">WCP専用</option>
+            </select>
+          </div>
           <button className="btn btn-primary w-full" onClick={handleCreateCategory}>追加する</button>
 
           <div className="mt-6">
@@ -67,11 +78,15 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
             {eventCategories.length === 0 && <p className="text-sm text-gray-400">カテゴリーがありません</p>}
             {eventCategories.map(cat => (
               <div key={cat.id} className="p-2 border-b flex justify-between items-center group">
-                <span>{cat.name}</span>
+                <div className="flex items-center gap-2">
+                  <span>{cat.name}</span>
+                  {cat.allowedRole === 'WCP' && <span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-semibold border border-indigo-200">WCP</span>}
+                  {cat.allowedRole === 'ボランティア' && <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-semibold border border-green-200">ボラ</span>}
+                </div>
                 <div className="flex gap-2">
                   <button 
                     className="text-gray-400 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => setEditCategoryModal({ id: cat.id, name: cat.name })}
+                    onClick={() => setEditCategoryModal({ id: cat.id, name: cat.name, allowedRole: cat.allowedRole || '制限なし' })}
                   >
                     <Pencil size={16} />
                   </button>
@@ -244,13 +259,21 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
               <label>カテゴリー名</label>
               <input type="text" value={editCategoryModal.name} onChange={e => setEditCategoryModal({...editCategoryModal, name: e.target.value})} />
             </div>
+            <div className="form-group">
+              <label>権限</label>
+              <select value={editCategoryModal.allowedRole || '制限なし'} onChange={e => setEditCategoryModal({...editCategoryModal, allowedRole: e.target.value as any})}>
+                <option value="制限なし">制限なし (誰でも可)</option>
+                <option value="ボランティア">ボランティア専用</option>
+                <option value="WCP">WCP専用</option>
+              </select>
+            </div>
             <div className="flex gap-4 mt-6">
               <button className="btn btn-secondary flex-1" onClick={() => setEditCategoryModal(null)}>キャンセル</button>
               <button 
                 className="btn btn-primary flex-1" 
                 onClick={() => {
                   if (!editCategoryModal.name) return;
-                  dispatchAction('UPDATE_CATEGORY', { id: editCategoryModal.id, eventId, name: editCategoryModal.name });
+                  dispatchAction('UPDATE_CATEGORY', { id: editCategoryModal.id, eventId, name: editCategoryModal.name, allowedRole: editCategoryModal.allowedRole });
                   setEditCategoryModal(null);
                 }}
               >

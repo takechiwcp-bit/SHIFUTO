@@ -16,6 +16,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
   const [newStaffStartTime, setNewStaffStartTime] = useState(defaultStartTime);
   const [newStaffEndTime, setNewStaffEndTime] = useState(defaultEndTime);
   const [newStaffRemarks, setNewStaffRemarks] = useState('');
+  const [newStaffRole, setNewStaffRole] = useState<'WCP' | 'ボランティア'>('ボランティア');
   
   useEffect(() => {
     setNewStaffStartTime(defaultStartTime);
@@ -23,7 +24,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
   }, [defaultStartTime, defaultEndTime]);
   
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
-  const [editStaffModal, setEditStaffModal] = useState<{ id: string; name: string; availableStartTime: string; availableEndTime: string; remarks: string } | null>(null);
+  const [editStaffModal, setEditStaffModal] = useState<{ id: string; name: string; availableStartTime: string; availableEndTime: string; remarks: string; role?: 'WCP' | 'ボランティア' } | null>(null);
 
   const eventCategories = PositionCategories.filter(c => c.eventId === eventId);
   const eventCategoryIds = eventCategories.map(c => c.id);
@@ -36,12 +37,14 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
       name: newStaffName,
       availableStartTime: newStaffStartTime,
       availableEndTime: newStaffEndTime,
-      remarks: newStaffRemarks
+      remarks: newStaffRemarks,
+      role: newStaffRole
     });
     setNewStaffName('');
     setNewStaffStartTime(defaultStartTime);
     setNewStaffEndTime(defaultEndTime);
     setNewStaffRemarks('');
+    setNewStaffRole('ボランティア');
   };
 
   const handleTraitChange = (staffId: string, positionId: string, trait: string) => {
@@ -60,6 +63,13 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
         <div className="form-group">
           <label>名前</label>
           <input type="text" value={newStaffName} onChange={e => setNewStaffName(e.target.value)} placeholder="例: 山田太郎" />
+        </div>
+        <div className="form-group">
+          <label>権限</label>
+          <select value={newStaffRole} onChange={e => setNewStaffRole(e.target.value as any)}>
+            <option value="ボランティア">ボランティア</option>
+            <option value="WCP">WCP</option>
+          </select>
         </div>
         <div className="form-row">
           <div className="form-group">
@@ -82,13 +92,20 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
           <div className="flex flex-col gap-2 max-h-96 overflow-y-auto pr-2">
             {Staff.map(s => (
               <div 
-                key={s.id} 
-                className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedStaffId === s.id ? 'border-primary bg-indigo-50' : 'border-gray-200 hover:bg-gray-50'}`}
+                key={s.id}
+                className={`p-3 border rounded-lg transition-colors cursor-pointer ${selectedStaffId === s.id ? 'border-primary shadow-sm bg-indigo-50/30' : 'bg-white hover:border-gray-300'}`}
                 onClick={() => setSelectedStaffId(s.id)}
               >
                 <div className="flex justify-between items-start mb-1">
                   <div>
-                    <div className="font-medium">{s.name}</div>
+                    <div className="font-semibold flex items-center gap-2">
+                      {s.name}
+                      {s.role === 'WCP' ? (
+                        <span className="text-xs bg-indigo-500 text-white px-1.5 py-0.5 rounded">WCP</span>
+                      ) : (
+                        <span className="text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">ボランティア</span>
+                      )}
+                    </div>
                     {(s.availableStartTime && s.availableEndTime) && (
                       <div className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded inline-block mt-1">
                         {s.availableStartTime}〜{s.availableEndTime}
@@ -105,7 +122,8 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
                           name: s.name,
                           availableStartTime: s.availableStartTime || defaultStartTime,
                           availableEndTime: s.availableEndTime || defaultEndTime,
-                          remarks: s.remarks || ''
+                          remarks: s.remarks || '',
+                          role: s.role || 'ボランティア'
                         });
                       }}
                     >
@@ -189,6 +207,13 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
               <label>名前</label>
               <input type="text" value={editStaffModal.name} onChange={e => setEditStaffModal({...editStaffModal, name: e.target.value})} />
             </div>
+            <div className="form-group">
+              <label>権限</label>
+              <select value={editStaffModal.role || 'ボランティア'} onChange={e => setEditStaffModal({...editStaffModal, role: e.target.value as any})}>
+                <option value="ボランティア">ボランティア</option>
+                <option value="WCP">WCP</option>
+              </select>
+            </div>
             <div className="form-row">
               <div className="form-group">
                 <label>入れる時間 (開始)</label>
@@ -214,7 +239,8 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
                     name: editStaffModal.name,
                     availableStartTime: editStaffModal.availableStartTime,
                     availableEndTime: editStaffModal.availableEndTime,
-                    remarks: editStaffModal.remarks
+                    remarks: editStaffModal.remarks,
+                    role: editStaffModal.role || 'ボランティア'
                   });
                   setEditStaffModal(null);
                 }}

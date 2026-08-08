@@ -13,6 +13,7 @@ export interface PositionCategory {
   id: string;
   eventId: string;
   name: string;
+  allowedRole?: 'WCP' | 'ボランティア' | '制限なし';
 }
 
 export interface Position {
@@ -33,6 +34,7 @@ export interface Staff {
   availableStartTime?: string; // HH:mm
   availableEndTime?: string; // HH:mm
   remarks: string;
+  role?: 'WCP' | 'ボランティア';
 }
 
 export interface StaffTrait {
