@@ -5,6 +5,8 @@ export interface AppEvent {
   startTime?: string; // HH:mm
   endTime?: string; // HH:mm
   remarks: string;
+  workMinutesBeforeBreak?: number; // minutes
+  breakMinutes?: number; // minutes
 }
 
 export interface PositionCategory {

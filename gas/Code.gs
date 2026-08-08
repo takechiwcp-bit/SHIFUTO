@@ -119,7 +119,8 @@ function getOrCreateSheet(sheetName) {
 
 function getHeadersForSheet(sheetName) {
   switch (sheetName) {
-    case 'Events': return ['id', 'name', 'date', 'startTime', 'endTime', 'remarks'];
+    case 'Events':
+      return ['id', 'name', 'date', 'startTime', 'endTime', 'remarks', 'workMinutesBeforeBreak', 'breakMinutes'];
     case 'PositionCategories': return ['id', 'eventId', 'name'];
     case 'Positions': return ['id', 'categoryId', 'name', 'requiredPeople', 'unitTime', 'startTime', 'endTime', 'remarks', 'isFixed'];
     case 'Staff': return ['id', 'name', 'availableStartTime', 'availableEndTime', 'remarks'];

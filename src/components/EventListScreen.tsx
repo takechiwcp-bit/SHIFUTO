@@ -13,7 +13,7 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
   const [newEventStartTime, setNewEventStartTime] = useState('09:00');
   const [newEventEndTime, setNewEventEndTime] = useState('18:00');
   const [newEventRemarks, setNewEventRemarks] = useState('');
-  
+
   const [editEventModal, setEditEventModal] = useState<{ id: string; name: string; date: string; startTime: string; endTime: string; remarks: string } | null>(null);
 
   const handleCreateEvent = () => {
@@ -82,8 +82,8 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {Events.map(ev => (
-              <div 
-                key={ev.id} 
+              <div
+                key={ev.id}
                 className="p-5 border border-gray-200 rounded-lg hover:border-primary hover:shadow-md transition-all cursor-pointer bg-white group flex flex-col justify-between"
                 onClick={() => onSelectEvent(ev.id)}
               >
@@ -96,7 +96,7 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
                     <p className="text-sm text-gray-500 line-clamp-2">{ev.remarks || '備考なし'}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button 
+                    <button
                       className="text-gray-400 hover:text-indigo-500 p-1"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -112,7 +112,7 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
                     >
                       <Pencil size={18} />
                     </button>
-                    <button 
+                    <button
                       className="text-gray-400 hover:text-red-500 p-1"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -142,33 +142,33 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
               <h3 className="text-xl font-bold">イベントの編集</h3>
               <button onClick={() => setEditEventModal(null)} className="text-gray-500 hover:text-gray-800"><X size={24} /></button>
             </div>
-            
+
             <div className="form-group">
               <label>イベント名</label>
-              <input type="text" value={editEventModal.name} onChange={e => setEditEventModal({...editEventModal, name: e.target.value})} />
+              <input type="text" value={editEventModal.name} onChange={e => setEditEventModal({ ...editEventModal, name: e.target.value })} />
             </div>
             <div className="form-group">
               <label>開催日</label>
-              <input type="date" value={editEventModal.date} onChange={e => setEditEventModal({...editEventModal, date: e.target.value})} />
+              <input type="date" value={editEventModal.date} onChange={e => setEditEventModal({ ...editEventModal, date: e.target.value })} />
             </div>
             <div className="form-row mb-4">
               <div className="form-group mb-0">
                 <label>開始時間</label>
-                <input type="time" value={editEventModal.startTime} onChange={e => setEditEventModal({...editEventModal, startTime: e.target.value})} />
+                <input type="time" value={editEventModal.startTime} onChange={e => setEditEventModal({ ...editEventModal, startTime: e.target.value })} />
               </div>
               <div className="form-group mb-0">
                 <label>終了時間</label>
-                <input type="time" value={editEventModal.endTime} onChange={e => setEditEventModal({...editEventModal, endTime: e.target.value})} />
+                <input type="time" value={editEventModal.endTime} onChange={e => setEditEventModal({ ...editEventModal, endTime: e.target.value })} />
               </div>
             </div>
             <div className="form-group">
               <label>備考</label>
-              <textarea value={editEventModal.remarks} onChange={e => setEditEventModal({...editEventModal, remarks: e.target.value})} rows={3}></textarea>
+              <textarea value={editEventModal.remarks} onChange={e => setEditEventModal({ ...editEventModal, remarks: e.target.value })} rows={3}></textarea>
             </div>
-            
+
             <div className="flex justify-end gap-4 mt-6">
               <button className="btn btn-secondary" onClick={() => setEditEventModal(null)}>キャンセル</button>
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={() => {
                   if (!editEventModal.name || !editEventModal.date) return;

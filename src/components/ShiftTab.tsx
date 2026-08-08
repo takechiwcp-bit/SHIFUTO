@@ -41,7 +41,8 @@ const generateTimeBlocks = (start: string, end: string, unitMins: number) => {
 };
 
 export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
-  const { Positions, PositionCategories, Staff, Shifts, StaffTraits, dispatchAction } = useStore();
+  const { Events, Positions, PositionCategories, Staff, Shifts, StaffTraits, dispatchAction } = useStore();
+  const currentEvent = Events.find(e => e.id === eventId);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSortedByTrait, setIsSortedByTrait] = useState(false);
   
@@ -360,6 +361,53 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                     const isAssigned = !!overlappingShift;
                     const overlappingPosition = isAssigned ? Positions.find(p => p.id === overlappingShift.positionId) : null;
                     const isDisabled = !isAvailable || isAssigned;
+                    
+                    // 連続勤務時間の計算 (Calculate continuous work minutes)
+                    let needsBreak = false;
+                    if (currentEvent && currentEvent.workMinutesBeforeBreak && currentEvent.breakMinutes) {
+                      const parseTime = (t: string) => {
+                        if (!t || !t.includes(':')) return 0;
+                        const [h, m] = t.split(':').map(Number);
+                        return (h || 0) * 60 + (m || 0);
+                      };
+                      
+                      const staffShifts = Shifts.filter(sh => sh.staffId === s.id).map(sh => {
+                        const [start, end] = (sh.timeBlock || '').split('-');
+                        return { start: parseTime(start), end: parseTime(end) };
+                      }).filter(sh => sh.start < parseTime(assignModal.startTime)) // 新しいシフトより前のシフトのみ
+                        .sort((a, b) => a.start - b.start);
+
+                      let currentContinuousStart = -1;
+                      let lastEnd = -1;
+                      for (const sh of staffShifts) {
+                        if (lastEnd === -1) {
+                          currentContinuousStart = sh.start;
+                          lastEnd = sh.end;
+                        } else {
+                          const gap = sh.start - lastEnd;
+                          if (gap >= currentEvent.breakMinutes) {
+                            currentContinuousStart = sh.start;
+                          }
+                          lastEnd = Math.max(lastEnd, sh.end);
+                        }
+                      }
+
+                      let continuousWorkMins = 0;
+                      if (lastEnd !== -1) {
+                        const gapToNewShift = parseTime(assignModal.startTime) - lastEnd;
+                        if (gapToNewShift < currentEvent.breakMinutes) {
+                          continuousWorkMins = parseTime(assignModal.endTime) - currentContinuousStart;
+                        } else {
+                          continuousWorkMins = parseTime(assignModal.endTime) - parseTime(assignModal.startTime);
+                        }
+                      } else {
+                        continuousWorkMins = parseTime(assignModal.endTime) - parseTime(assignModal.startTime);
+                      }
+
+                      if (continuousWorkMins > currentEvent.workMinutesBeforeBreak) {
+                        needsBreak = true;
+                      }
+                    }
 
                     return (
                       <div 
@@ -372,6 +420,7 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                             {s.name}
                             {!isAvailable && <span className="text-xs bg-red-500 text-white px-1 rounded">時間外</span>}
                             {isAssigned && <span className="text-xs bg-gray-500 text-white px-1 rounded">{overlappingPosition?.name || '他シフトあり'}</span>}
+                            {(!isDisabled && needsBreak) && <span className="text-xs bg-yellow-500 text-white px-1 rounded">⚠️休憩推奨</span>}
                           </div>
                           {(s.availableStartTime && s.availableEndTime) && (
                             <div className="text-xs text-gray-500 mb-1">
