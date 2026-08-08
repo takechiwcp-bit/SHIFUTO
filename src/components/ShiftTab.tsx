@@ -43,6 +43,7 @@ const generateTimeBlocks = (start: string, end: string, unitMins: number) => {
 export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
   const { Positions, PositionCategories, Staff, Shifts, StaffTraits, dispatchAction } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSortedByTrait, setIsSortedByTrait] = useState(false);
   
 
 
@@ -306,21 +307,40 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
             </div>
 
             <p className="text-sm font-bold text-gray-700 mb-2">割り当てるスタッフを選択</p>
-            <div className="mb-2">
+            <div className="flex gap-2 mb-2">
               <input 
                 type="text" 
                 placeholder="スタッフ名を検索..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full p-2 border rounded text-sm"
+                className="flex-1 p-2 border rounded text-sm"
               />
+              <button 
+                className={`px-3 py-2 rounded text-sm font-semibold border transition-colors ${isSortedByTrait ? 'bg-indigo-50 border-primary text-primary' : 'bg-white border-gray-300 text-gray-600'}`}
+                onClick={() => setIsSortedByTrait(!isSortedByTrait)}
+              >
+                適性順
+              </button>
             </div>
             <div className="h-[50vh] max-h-96 overflow-y-auto pr-2 border rounded-md p-2 bg-gray-50 flex flex-col gap-2">
               {Staff.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
                 <p className="text-gray-500 text-sm">該当するスタッフがいません。</p>
               ) : (
                 <>
-                  {Staff.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map(s => {
+                  {(() => {
+                    let filteredStaff = Staff.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
+                    if (isSortedByTrait) {
+                      const getTraitScore = (s: any) => {
+                        const trait = StaffTraits.find(t => t.staffId === s.id && t.positionId === assignModal.positionId)?.trait;
+                        if (trait === '◎') return 4;
+                        if (trait === '◯') return 3;
+                        if (trait === '△') return 2;
+                        if (trait === '×') return 1;
+                        return 0;
+                      };
+                      filteredStaff.sort((a, b) => getTraitScore(b) - getTraitScore(a));
+                    }
+                    return filteredStaff.map(s => {
                     const trait = StaffTraits.find(t => t.staffId === s.id && t.positionId === assignModal.positionId)?.trait;
                     let badgeColor = 'bg-gray-100 text-gray-600';
                     if (trait === '◎') badgeColor = 'bg-blue-100 text-blue-700';
@@ -361,7 +381,7 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                         {trait && <span className={`px-2 py-1 rounded text-xs font-bold ${badgeColor}`}>{trait}</span>}
                       </div>
                     )
-                  })}
+                  })})()}
                 </>
               )}
             </div>
