@@ -28,13 +28,15 @@ export const useStore = create<StoreState>((set) => ({
       const response = await fetch(API_URL);
       const result = await response.json();
       if (result.success) {
+        const positions = result.data.Positions || [];
+        const validShifts = (result.data.Shifts || []).filter((s: any) => positions.some((p: any) => p.id === s.positionId));
         set({
           Events: result.data.Events || [],
           PositionCategories: result.data.PositionCategories || [],
-          Positions: result.data.Positions || [],
+          Positions: positions,
           Staff: result.data.Staff || [],
           StaffTraits: result.data.StaffTraits || [],
-          Shifts: result.data.Shifts || [],
+          Shifts: validShifts,
           error: null,
           isLoading: false
         });
@@ -59,13 +61,15 @@ export const useStore = create<StoreState>((set) => ({
       });
       const result = await response.json();
       if (result.success) {
+         const positions = result.data.Positions || [];
+         const validShifts = (result.data.Shifts || []).filter((s: any) => positions.some((p: any) => p.id === s.positionId));
          set({
           Events: result.data.Events || [],
           PositionCategories: result.data.PositionCategories || [],
-          Positions: result.data.Positions || [],
+          Positions: positions,
           Staff: result.data.Staff || [],
           StaffTraits: result.data.StaffTraits || [],
-          Shifts: result.data.Shifts || [],
+          Shifts: validShifts,
           error: null
         });
       } else {
@@ -83,8 +87,11 @@ let pollingStarted = false;
 export const startPolling = () => {
   if (pollingStarted) return;
   pollingStarted = true;
-  useStore.getState().fetchData();
-  setInterval(() => {
-    useStore.getState().fetchData();
-  }, 1000);
+  
+  const poll = async () => {
+    await useStore.getState().fetchData();
+    setTimeout(poll, 1500); // 1.5秒待機してから次のリクエストを送る（詰まり防止）
+  };
+  
+  poll();
 };
