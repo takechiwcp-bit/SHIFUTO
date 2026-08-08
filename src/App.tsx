@@ -21,39 +21,32 @@ function App() {
 
   return (
     <div className="container">
-      <header className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-teal-400">
-            Shift Manager Pro v2
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">Google Sheets Connected</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {error ? (
-            <span className="text-red-500 text-sm flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-red-500"></span>
-              エラー: {error}
-            </span>
-          ) : (
-            <span className="text-green-500 text-sm flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              同期中
-            </span>
-          )}
-        </div>
-      </header>
+      <div className="sticky top-0 z-40 bg-gray-100 shadow-sm" style={{ margin: '-2rem -2rem 1.5rem -2rem', padding: '2rem 2rem 0 2rem' }}>
+        <header className="mb-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-teal-400">
+              Shift Manager Pro v2
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">Google Sheets Connected</p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {error ? (
+              <span className="text-red-500 text-sm flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                エラー: {error}
+              </span>
+            ) : (
+              <span className="text-green-500 text-sm flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                同期中
+              </span>
+            )}
+          </div>
+        </header>
 
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 fade-in">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-500 font-medium">Google Spreadsheetからデータを読み込んでいます...</p>
-        </div>
-      ) : !selectedEventId ? (
-        <EventListScreen onSelectEvent={setSelectedEventId} />
-      ) : (
-        <div className="fade-in">
-          <div className="sticky top-0 z-40 bg-gray-100 pt-4 pb-2 -mt-4 shadow-sm" style={{ margin: '-2rem -2rem 1.5rem -2rem', padding: '2rem 2rem 0 2rem' }}>
+        {selectedEventId && !isLoading && (
+          <div className="fade-in pb-2">
             <div className="mb-4 flex items-center gap-4">
               <button 
                 className="btn btn-secondary btn-sm flex items-center gap-1"
@@ -99,8 +92,20 @@ function App() {
               </div>
             </div>
           </div>
+        )}
+        {!selectedEventId && <div className="pb-4"></div>}
+      </div>
 
-          <main className="mt-6">
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 fade-in">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-500 font-medium">Google Spreadsheetからデータを読み込んでいます...</p>
+        </div>
+      ) : !selectedEventId ? (
+        <EventListScreen onSelectEvent={setSelectedEventId} />
+      ) : (
+        <div className="fade-in">
+          <main className="mt-4">
             {activeTab === 'event' && <EventPositionTab eventId={selectedEventId} />}
             {activeTab === 'staff' && <StaffTab eventId={selectedEventId} />}
             {activeTab === 'shift' && <ShiftTab eventId={selectedEventId} />}
