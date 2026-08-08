@@ -106,60 +106,62 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                <p>左側のフォームからカテゴリーを作成し、ポジションを追加してください。</p>
              </div>
           ) : (
-            <table className="w-full text-left" style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #E5E7EB' }}>
-                  <th className="p-2">カテゴリー</th>
-                  <th className="p-2">ポジション名</th>
-                  <th className="p-2">必要人数</th>
-                  <th className="p-2">時間</th>
-                  <th className="p-2 whitespace-nowrap">単位(分)</th>
-                  <th className="p-2 whitespace-nowrap">枠の種類</th>
-                  <th className="p-2">備考</th>
-                  <th className="p-2"></th>
-                </tr>
-              </thead>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left" style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #E5E7EB' }}>
+                    <th className="p-2 whitespace-nowrap">カテゴリー</th>
+                    <th className="p-2 whitespace-nowrap">ポジション名</th>
+                    <th className="p-2 whitespace-nowrap">必要人数</th>
+                    <th className="p-2 whitespace-nowrap">時間</th>
+                    <th className="p-2 whitespace-nowrap">単位(分)</th>
+                    <th className="p-2 whitespace-nowrap">枠の種類</th>
+                    <th className="p-2 whitespace-nowrap">備考</th>
+                    <th className="p-2"></th>
+                  </tr>
+                </thead>
               <tbody>
-                {eventPositions.map(pos => {
-                  const cat = eventCategories.find(c => c.id === pos.categoryId);
-                  return (
-                    <tr key={pos.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
-                      <td className="p-2">{cat?.name}</td>
-                      <td className="p-2 font-semibold">{pos.name}</td>
-                      <td className="p-2">{pos.requiredPeople}名</td>
-                      <td className="p-2">{pos.startTime} - {pos.endTime}</td>
-                      <td className="p-2">{pos.unitTime}分</td>
-                      <td className="p-2 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${pos.isFixed ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                          {pos.isFixed ? '固定枠' : '変動枠'}
-                        </span>
-                      </td>
-                      <td className="p-2 text-sm text-gray-500">{pos.remarks}</td>
-                      <td className="p-2 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button 
-                            className="text-gray-400 hover:text-indigo-500 p-1"
-                            onClick={() => setEditPositionModal(pos)}
-                          >
-                            <Pencil size={16} />
-                          </button>
-                          <button 
-                            className="text-gray-400 hover:text-red-500 p-1"
-                            onClick={() => {
-                              if (window.confirm(`ポジション「${pos.name}」を本当に削除しますか？`)) {
-                                dispatchAction('DELETE_POSITION', { id: pos.id });
-                              }
-                            }}
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                  {eventPositions.map(pos => {
+                    const cat = eventCategories.find(c => c.id === pos.categoryId);
+                    return (
+                      <tr key={pos.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                        <td className="p-2">{cat?.name}</td>
+                        <td className="p-2 font-semibold">{pos.name}</td>
+                        <td className="p-2">{pos.requiredPeople}名</td>
+                        <td className="p-2">{pos.startTime} - {pos.endTime}</td>
+                        <td className="p-2">{pos.unitTime}分</td>
+                        <td className="p-2 whitespace-nowrap">
+                          <span className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${pos.isFixed ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                            {pos.isFixed ? '固定枠' : '変動枠'}
+                          </span>
+                        </td>
+                        <td className="p-2 text-sm text-gray-500">{pos.remarks}</td>
+                        <td className="p-2 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              className="text-gray-400 hover:text-indigo-500 p-1"
+                              onClick={() => setEditPositionModal(pos)}
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button 
+                              className="text-gray-400 hover:text-red-500 p-1"
+                              onClick={() => {
+                                if (window.confirm(`ポジション「${pos.name}」を本当に削除しますか？`)) {
+                                  dispatchAction('DELETE_POSITION', { id: pos.id });
+                                }
+                              }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
