@@ -358,6 +358,7 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                       return assignModal.startTime < shiftEnd && shiftStart < assignModal.endTime;
                     });
                     const isAssigned = !!overlappingShift;
+                    const overlappingPosition = isAssigned ? Positions.find(p => p.id === overlappingShift.positionId) : null;
                     const isDisabled = !isAvailable || isAssigned;
 
                     return (
@@ -370,7 +371,7 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                           <div className="font-semibold flex items-center gap-2">
                             {s.name}
                             {!isAvailable && <span className="text-xs bg-red-500 text-white px-1 rounded">時間外</span>}
-                            {isAssigned && <span className="text-xs bg-gray-500 text-white px-1 rounded">他シフトあり</span>}
+                            {isAssigned && <span className="text-xs bg-gray-500 text-white px-1 rounded">{overlappingPosition?.name || '他シフトあり'}</span>}
                           </div>
                           {(s.availableStartTime && s.availableEndTime) && (
                             <div className="text-xs text-gray-500 mb-1">
