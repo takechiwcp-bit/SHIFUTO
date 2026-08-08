@@ -13,8 +13,10 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
   const [newEventStartTime, setNewEventStartTime] = useState('09:00');
   const [newEventEndTime, setNewEventEndTime] = useState('18:00');
   const [newEventRemarks, setNewEventRemarks] = useState('');
+  const [newEventWorkMinutes, setNewEventWorkMinutes] = useState('240');
+  const [newEventBreakMinutes, setNewEventBreakMinutes] = useState('60');
 
-  const [editEventModal, setEditEventModal] = useState<{ id: string; name: string; date: string; startTime: string; endTime: string; remarks: string } | null>(null);
+  const [editEventModal, setEditEventModal] = useState<{ id: string; name: string; date: string; startTime: string; endTime: string; remarks: string; workMinutesBeforeBreak?: number; breakMinutes?: number } | null>(null);
 
   const handleCreateEvent = () => {
     if (!newEventName || !newEventDate) return;
@@ -59,6 +61,16 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
           <div className="form-group mb-0">
             <label>終了時間</label>
             <input type="time" value={newEventEndTime} onChange={e => setNewEventEndTime(e.target.value)} />
+          </div>
+        </div>
+        <div className="form-row mb-4">
+          <div className="form-group mb-0">
+            <label>連続勤務の上限 (分)</label>
+            <input type="number" min="0" value={newEventWorkMinutes} onChange={e => setNewEventWorkMinutes(e.target.value)} placeholder="例: 240" />
+          </div>
+          <div className="form-group mb-0">
+            <label>必要な休憩 (分)</label>
+            <input type="number" min="0" value={newEventBreakMinutes} onChange={e => setNewEventBreakMinutes(e.target.value)} placeholder="例: 60" />
           </div>
         </div>
         <div className="form-group">
@@ -159,6 +171,16 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
               <div className="form-group mb-0">
                 <label>終了時間</label>
                 <input type="time" value={editEventModal.endTime} onChange={e => setEditEventModal({ ...editEventModal, endTime: e.target.value })} />
+              </div>
+            </div>
+            <div className="form-row mb-4">
+              <div className="form-group mb-0">
+                <label>連続勤務の上限 (分)</label>
+                <input type="number" min="0" value={editEventModal.workMinutesBeforeBreak} onChange={e => setEditEventModal({...editEventModal, workMinutesBeforeBreak: parseInt(e.target.value) || 0})} />
+              </div>
+              <div className="form-group mb-0">
+                <label>必要な休憩 (分)</label>
+                <input type="number" min="0" value={editEventModal.breakMinutes} onChange={e => setEditEventModal({...editEventModal, breakMinutes: parseInt(e.target.value) || 0})} />
               </div>
             </div>
             <div className="form-group">
