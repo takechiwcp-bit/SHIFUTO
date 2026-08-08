@@ -45,7 +45,7 @@ function doPost(e) {
         result = updateRecord('Positions', payload);
         break;
       case 'DELETE_POSITION':
-        result = deleteRecord('Positions', payload.id);
+        result = deletePositionAndRelated(payload.id);
         break;
       case 'ADD_STAFF':
         result = addRecord('Staff', payload);
@@ -54,7 +54,7 @@ function doPost(e) {
         result = updateRecord('Staff', payload);
         break;
       case 'DELETE_STAFF':
-        result = deleteRecord('Staff', payload.id);
+        result = deleteStaffAndRelated(payload.id);
         break;
       case 'UPSERT_TRAIT':
         result = upsertTrait(payload);
@@ -221,6 +221,45 @@ function deleteRecord(sheetName, id) {
     }
   }
   return false;
+}
+
+function deletePositionAndRelated(id) {
+  const posDeleted = deleteRecord('Positions', id);
+  if (posDeleted) {
+    deleteRecordsByField('Shifts', 'positionId', id);
+    deleteRecordsByField('StaffTraits', 'positionId', id);
+  }
+  return posDeleted;
+}
+
+function deleteStaffAndRelated(id) {
+  const staffDeleted = deleteRecord('Staff', id);
+  if (staffDeleted) {
+    deleteRecordsByField('Shifts', 'staffId', id);
+    deleteRecordsByField('StaffTraits', 'staffId', id);
+  }
+  return staffDeleted;
+}
+
+function deleteRecordsByField(sheetName, fieldName, value) {
+  const sheet = getOrCreateSheet(sheetName);
+  const dataRange = sheet.getDataRange();
+  const values = dataRange.getValues();
+  if (values.length < 2) return 0;
+  
+  const headers = values[0];
+  const fieldIndex = headers.indexOf(fieldName);
+  if (fieldIndex === -1) return 0;
+  
+  let deletedCount = 0;
+  // 削除による行ズレを防ぐため、下から上へループする
+  for (let i = values.length - 1; i >= 1; i--) {
+    if (String(values[i][fieldIndex]) === String(value)) {
+      sheet.deleteRow(i + 1);
+      deletedCount++;
+    }
+  }
+  return deletedCount;
 }
 
 function upsertTrait(payload) {
