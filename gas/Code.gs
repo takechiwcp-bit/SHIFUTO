@@ -42,7 +42,7 @@ function doPost(e) {
         result = addRecord('Positions', payload);
         break;
       case 'UPDATE_POSITION':
-        result = updateRecord('Positions', payload);
+        result = updatePositionAndRelated(payload);
         break;
       case 'DELETE_POSITION':
         result = deletePositionAndRelated(payload.id);
@@ -230,6 +230,38 @@ function deletePositionAndRelated(id) {
     deleteRecordsByField('StaffTraits', 'positionId', id);
   }
   return posDeleted;
+}
+
+function updatePositionAndRelated(payload) {
+  const updatedPos = updateRecord('Positions', payload);
+  if (updatedPos && payload.requiredPeople !== undefined) {
+    deleteOutdatedShifts(payload.id, payload.requiredPeople);
+  }
+  return updatedPos;
+}
+
+function deleteOutdatedShifts(positionId, requiredPeople) {
+  const sheet = getOrCreateSheet('Shifts');
+  const dataRange = sheet.getDataRange();
+  const values = dataRange.getValues();
+  if (values.length < 2) return 0;
+  
+  const headers = values[0];
+  const posIdx = headers.indexOf('positionId');
+  const slotIdx = headers.indexOf('slotIndex');
+  
+  if (posIdx === -1 || slotIdx === -1) return 0;
+  
+  let deletedCount = 0;
+  // 下から上にループして削除（行ズレ防止）
+  for (let i = values.length - 1; i >= 1; i--) {
+    if (String(values[i][posIdx]) === String(positionId) && 
+        Number(values[i][slotIdx]) >= Number(requiredPeople)) {
+      sheet.deleteRow(i + 1);
+      deletedCount++;
+    }
+  }
+  return deletedCount;
 }
 
 function deleteStaffAndRelated(id) {

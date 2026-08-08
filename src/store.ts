@@ -29,7 +29,12 @@ export const useStore = create<StoreState>((set) => ({
       const result = await response.json();
       if (result.success) {
         const positions = result.data.Positions || [];
-        const validShifts = (result.data.Shifts || []).filter((s: any) => positions.some((p: any) => p.id === s.positionId));
+        const validShifts = (result.data.Shifts || []).filter((s: any) => {
+          const p = positions.find((pos: any) => pos.id === s.positionId);
+          if (!p) return false;
+          if (s.slotIndex >= p.requiredPeople) return false;
+          return true;
+        });
         set({
           Events: result.data.Events || [],
           PositionCategories: result.data.PositionCategories || [],
@@ -62,7 +67,12 @@ export const useStore = create<StoreState>((set) => ({
       const result = await response.json();
       if (result.success) {
          const positions = result.data.Positions || [];
-         const validShifts = (result.data.Shifts || []).filter((s: any) => positions.some((p: any) => p.id === s.positionId));
+         const validShifts = (result.data.Shifts || []).filter((s: any) => {
+           const p = positions.find((pos: any) => pos.id === s.positionId);
+           if (!p) return false;
+           if (s.slotIndex >= p.requiredPeople) return false;
+           return true;
+         });
          set({
           Events: result.data.Events || [],
           PositionCategories: result.data.PositionCategories || [],
