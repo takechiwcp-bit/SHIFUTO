@@ -331,16 +331,26 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                     const isAvailable = (!s.availableStartTime || s.availableStartTime <= assignModal.startTime) && 
                                         (!s.availableEndTime || s.availableEndTime >= assignModal.endTime);
 
+                    const overlappingShift = Shifts.find(shift => {
+                      if (shift.staffId !== s.id) return false;
+                      const [shiftStart, shiftEnd] = (shift.timeBlock || '').split('-');
+                      if (!shiftStart || !shiftEnd) return false;
+                      return assignModal.startTime < shiftEnd && shiftStart < assignModal.endTime;
+                    });
+                    const isAssigned = !!overlappingShift;
+                    const isDisabled = !isAvailable || isAssigned;
+
                     return (
                       <div 
                         key={s.id}
-                        className={`flex justify-between items-center p-3 bg-white border rounded-lg cursor-pointer transition-colors shadow-sm ${!isAvailable ? 'opacity-50 hover:bg-gray-50' : 'hover:border-primary hover:shadow-md'}`}
-                        onClick={() => handleAssign(s.id)}
+                        className={`flex justify-between items-center p-3 border rounded-lg transition-colors shadow-sm ${isDisabled ? 'bg-gray-50 opacity-60 cursor-not-allowed' : 'bg-white cursor-pointer hover:border-primary hover:shadow-md'}`}
+                        onClick={() => !isDisabled && handleAssign(s.id)}
                       >
                         <div>
                           <div className="font-semibold flex items-center gap-2">
                             {s.name}
                             {!isAvailable && <span className="text-xs bg-red-500 text-white px-1 rounded">時間外</span>}
+                            {isAssigned && <span className="text-xs bg-gray-500 text-white px-1 rounded">他シフトあり</span>}
                           </div>
                           {(s.availableStartTime && s.availableEndTime) && (
                             <div className="text-xs text-gray-500 mb-1">
