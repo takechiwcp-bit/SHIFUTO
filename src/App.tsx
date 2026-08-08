@@ -11,7 +11,7 @@ function App() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'event' | 'staff' | 'shift' | 'shiftTable'>('event');
   
-  const { Events, error, isLoading } = useStore();
+  const { Events, error, isLoading, setActiveEventId } = useStore();
 
   useEffect(() => {
     startPolling();
@@ -52,6 +52,7 @@ function App() {
                 className="btn btn-secondary btn-sm flex items-center gap-1"
                 onClick={() => {
                   setSelectedEventId(null);
+                  setActiveEventId(null);
                   setActiveTab('event');
                 }}
               >
@@ -102,7 +103,10 @@ function App() {
           <p className="text-gray-500 font-medium">Google Spreadsheetからデータを読み込んでいます...</p>
         </div>
       ) : !selectedEventId ? (
-        <EventListScreen onSelectEvent={setSelectedEventId} />
+        <EventListScreen onSelectEvent={(id) => {
+          setSelectedEventId(id);
+          setActiveEventId(id);
+        }} />
       ) : (
         <div className="fade-in">
           <main className="mt-4">

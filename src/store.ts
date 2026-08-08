@@ -5,27 +5,37 @@ import type { AppState } from './types';
 const API_URL = 'https://script.google.com/macros/s/AKfycbwTFt6kVq5LSmtK_IbAEezfBKq-LMTGArVs79KnwtWuYk97FDyGSFWHteMiVYUlho-NYQ/exec';
 
 interface StoreState extends AppState {
+  activeEventId: string | null;
   loading: boolean;
   error: string | null;
   isLoading: boolean;
+  setActiveEventId: (id: string | null) => void;
   fetchData: () => Promise<void>;
   dispatchAction: (action: string, payload: any) => Promise<void>;
 }
 
-export const useStore = create<StoreState>((set) => ({
+export const useStore = create<StoreState>((set, get) => ({
   Events: [],
   PositionCategories: [],
   Positions: [],
   Staff: [],
   StaffTraits: [],
   Shifts: [],
+  activeEventId: null,
   loading: false,
   error: null,
   isLoading: true,
   
+  setActiveEventId: (id) => {
+    set({ activeEventId: id, isLoading: true });
+    get().fetchData();
+  },
+  
   fetchData: async () => {
     try {
-      const response = await fetch(API_URL);
+      const { activeEventId } = get();
+      const url = activeEventId ? `${API_URL}?eventId=${activeEventId}` : API_URL;
+      const response = await fetch(url);
       const result = await response.json();
       if (result.success) {
         const positions = result.data.Positions || [];
@@ -56,13 +66,14 @@ export const useStore = create<StoreState>((set) => ({
   
   dispatchAction: async (action, payload) => {
     try {
+      const { activeEventId } = get();
       // Opt out of preflight by sending text/plain which GAS doPost can read via e.postData.contents
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'text/plain;charset=utf-8',
         },
-        body: JSON.stringify({ action, payload })
+        body: JSON.stringify({ action, payload, activeEventId })
       });
       const result = await response.json();
       if (result.success) {

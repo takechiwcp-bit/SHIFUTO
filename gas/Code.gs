@@ -2,7 +2,8 @@ const SCRIPT_VERSION = "1.0";
 
 function doGet(e) {
   try {
-    const data = fetchAllData();
+    const eventId = e.parameter.eventId;
+    const data = fetchOptimizedData(eventId);
     return ContentService.createTextOutput(JSON.stringify({ success: true, data: data }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
@@ -16,6 +17,7 @@ function doPost(e) {
     const postData = JSON.parse(e.postData.contents);
     const action = postData.action;
     const payload = postData.payload;
+    const activeEventId = postData.activeEventId;
     
     let result = null;
     
@@ -75,8 +77,8 @@ function doPost(e) {
         throw new Error('Unknown action: ' + action);
     }
     
-    // Return updated state
-    const data = fetchAllData();
+    // Return updated state optimized for the current event
+    const data = fetchOptimizedData(activeEventId);
     
     return ContentService.createTextOutput(JSON.stringify({ success: true, data: data }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -130,49 +132,69 @@ function getHeadersForSheet(sheetName) {
   }
 }
 
-function fetchAllData() {
-  const sheets = ['Events', 'PositionCategories', 'Positions', 'Staff', 'StaffTraits', 'Shifts'];
-  const result = {};
+function fetchOptimizedData(eventId) {
+  const result = {
+    Events: getSheetData('Events'),
+    Staff: getSheetData('Staff')
+  };
   
-  sheets.forEach(sheetName => {
-    const sheet = getOrCreateSheet(sheetName);
-    const dataRange = sheet.getDataRange();
-    const values = dataRange.getValues();
+  if (eventId) {
+    const categories = getSheetData('PositionCategories').filter(c => String(c.eventId) === String(eventId));
+    const categoryIds = categories.map(c => String(c.id));
     
-    if (values.length < 2) {
-      result[sheetName] = [];
-      return;
-    }
+    const positions = getSheetData('Positions').filter(p => categoryIds.includes(String(p.categoryId)));
+    const positionIds = positions.map(p => String(p.id));
     
-    const headers = values[0];
-    const rows = [];
+    const shifts = getSheetData('Shifts').filter(s => positionIds.includes(String(s.positionId)));
+    const traits = getSheetData('StaffTraits').filter(t => positionIds.includes(String(t.positionId)));
     
-    for (let i = 1; i < values.length; i++) {
-      const row = values[i];
-      const obj = {};
-      let isEmpty = true;
-      for (let j = 0; j < headers.length; j++) {
-        let val = row[j];
-        if (val instanceof Date) {
-          if (headers[j].toLowerCase().includes('time')) {
-            val = Utilities.formatDate(val, Session.getScriptTimeZone(), "HH:mm");
-          } else if (headers[j] === 'date') {
-            val = Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd");
-          } else {
-            val = val.toISOString();
-          }
-        }
-        obj[headers[j]] = val !== undefined ? val : null;
-        if (val !== "") isEmpty = false;
-      }
-      if (!isEmpty) {
-        rows.push(obj);
-      }
-    }
-    result[sheetName] = rows;
-  });
+    result.PositionCategories = categories;
+    result.Positions = positions;
+    result.Shifts = shifts;
+    result.StaffTraits = traits;
+  } else {
+    result.PositionCategories = [];
+    result.Positions = [];
+    result.Shifts = [];
+    result.StaffTraits = [];
+  }
   
   return result;
+}
+
+function getSheetData(sheetName) {
+  const sheet = getOrCreateSheet(sheetName);
+  const dataRange = sheet.getDataRange();
+  const values = dataRange.getValues();
+  
+  if (values.length < 2) return [];
+  
+  const headers = values[0];
+  const rows = [];
+  
+  for (let i = 1; i < values.length; i++) {
+    const row = values[i];
+    const obj = {};
+    let isEmpty = true;
+    for (let j = 0; j < headers.length; j++) {
+      let val = row[j];
+      if (val instanceof Date) {
+        if (headers[j].toLowerCase().includes('time')) {
+          val = Utilities.formatDate(val, Session.getScriptTimeZone(), "HH:mm");
+        } else if (headers[j] === 'date') {
+          val = Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd");
+        } else {
+          val = val.toISOString();
+        }
+      }
+      obj[headers[j]] = val !== undefined ? val : null;
+      if (val !== "") isEmpty = false;
+    }
+    if (!isEmpty) {
+      rows.push(obj);
+    }
+  }
+  return rows;
 }
 
 function addRecord(sheetName, payload) {
