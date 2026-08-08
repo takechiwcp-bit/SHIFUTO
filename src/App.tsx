@@ -53,52 +53,54 @@ function App() {
         <EventListScreen onSelectEvent={setSelectedEventId} />
       ) : (
         <div className="fade-in">
-          <div className="mb-6 flex items-center gap-4">
-            <button 
-              className="btn btn-secondary btn-sm flex items-center gap-1"
-              onClick={() => {
-                setSelectedEventId(null);
-                setActiveTab('event');
-              }}
-            >
-              <ChevronLeft size={16} /> ホームに戻る
-            </button>
-            <h2 className="text-2xl font-bold text-gray-800">
-              {selectedEvent?.name} <span className="text-sm font-normal text-gray-500 ml-2">
-                {selectedEvent?.date} 
-                {(selectedEvent?.startTime && selectedEvent?.endTime) && ` (${selectedEvent.startTime} - ${selectedEvent.endTime})`}
-              </span>
-            </h2>
+          <div className="sticky top-0 z-40 bg-gray-100 pt-4 pb-2 -mt-4 shadow-sm" style={{ margin: '-2rem -2rem 1.5rem -2rem', padding: '2rem 2rem 0 2rem' }}>
+            <div className="mb-4 flex items-center gap-4">
+              <button 
+                className="btn btn-secondary btn-sm flex items-center gap-1"
+                onClick={() => {
+                  setSelectedEventId(null);
+                  setActiveTab('event');
+                }}
+              >
+                <ChevronLeft size={16} /> ホームに戻る
+              </button>
+              <h2 className="text-2xl font-bold text-gray-800">
+                {selectedEvent?.name} <span className="text-sm font-normal text-gray-500 ml-2">
+                  {selectedEvent?.date} 
+                  {(selectedEvent?.startTime && selectedEvent?.endTime) && ` (${selectedEvent.startTime} - ${selectedEvent.endTime})`}
+                </span>
+              </h2>
+            </div>
+
+            <div className="tabs mb-0">
+              <div 
+                className={`tab ${activeTab === 'event' ? 'active' : ''} flex items-center gap-2`}
+                onClick={() => setActiveTab('event')}
+              >
+                <Calendar size={18} /> ポジション管理
+              </div>
+              <div 
+                className={`tab ${activeTab === 'staff' ? 'active' : ''} flex items-center gap-2`}
+                onClick={() => setActiveTab('staff')}
+              >
+                <Users size={18} /> スタッフ管理
+              </div>
+              <div 
+                className={`tab ${activeTab === 'shift' ? 'active' : ''} flex items-center gap-2`}
+                onClick={() => setActiveTab('shift')}
+              >
+                <Grid size={18} /> シフト作成
+              </div>
+              <div 
+                className={`tab ${activeTab === 'shiftTable' ? 'active' : ''} flex items-center gap-2`}
+                onClick={() => setActiveTab('shiftTable')}
+              >
+                <Table size={18} /> シフト表
+              </div>
+            </div>
           </div>
 
-          <div className="tabs">
-            <div 
-              className={`tab ${activeTab === 'event' ? 'active' : ''} flex items-center gap-2`}
-              onClick={() => setActiveTab('event')}
-            >
-              <Calendar size={18} /> ポジション管理
-            </div>
-            <div 
-              className={`tab ${activeTab === 'staff' ? 'active' : ''} flex items-center gap-2`}
-              onClick={() => setActiveTab('staff')}
-            >
-              <Users size={18} /> スタッフ管理
-            </div>
-            <div 
-              className={`tab ${activeTab === 'shift' ? 'active' : ''} flex items-center gap-2`}
-              onClick={() => setActiveTab('shift')}
-            >
-              <Grid size={18} /> シフト作成
-            </div>
-            <div 
-              className={`tab ${activeTab === 'shiftTable' ? 'active' : ''} flex items-center gap-2`}
-              onClick={() => setActiveTab('shiftTable')}
-            >
-              <Table size={18} /> シフト表
-            </div>
-          </div>
-
-          <main>
+          <main className="mt-6">
             {activeTab === 'event' && <EventPositionTab eventId={selectedEventId} />}
             {activeTab === 'staff' && <StaffTab eventId={selectedEventId} />}
             {activeTab === 'shift' && <ShiftTab eventId={selectedEventId} />}
