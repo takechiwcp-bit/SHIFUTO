@@ -106,8 +106,8 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                <p>左側のフォームからカテゴリーを作成し、ポジションを追加してください。</p>
              </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left" style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse' }}>
+            <div className="w-full">
+              <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid #E5E7EB' }}>
                     <th className="p-2 whitespace-nowrap">カテゴリー</th>
