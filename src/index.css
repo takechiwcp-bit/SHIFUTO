@@ -363,8 +363,10 @@ label {
 .overflow-y-auto { overflow-y: auto; }
 .overflow-x-auto { overflow-x: auto; }
 .sticky { position: sticky; }
+.top-0 { top: 0; }
 .left-0 { left: 0; }
 .z-10 { z-index: 10; }
+.z-40 { z-index: 40; }
 .relative { position: relative; }
 .group { /* no-op */ }
 
