@@ -14,6 +14,9 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
   
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [selectedImportNames, setSelectedImportNames] = useState<string[]>([]);
+  const [importSortType, setImportSortType] = useState<'name' | 'WCP' | 'volunteer'>('name');
+  const [importStartTime, setImportStartTime] = useState(defaultStartTime);
+  const [importEndTime, setImportEndTime] = useState(defaultEndTime);
   
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffStartTime, setNewStaffStartTime] = useState(defaultStartTime);
@@ -67,8 +70,8 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
         id: crypto.randomUUID(),
         eventId,
         name: template?.name || name,
-        availableStartTime: defaultStartTime,
-        availableEndTime: defaultEndTime,
+        availableStartTime: importStartTime,
+        availableEndTime: importEndTime,
         remarks: '',
         role: template?.role || 'ボランティア'
       };
@@ -116,6 +119,8 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
             className="btn btn-secondary w-full text-sm border-dashed"
             onClick={() => {
               setSelectedImportNames([]);
+              setImportStartTime(defaultStartTime);
+              setImportEndTime(defaultEndTime);
               setImportModalOpen(true);
             }}
           >
@@ -292,19 +297,75 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
 
       {importModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-content max-w-md flex flex-col max-h-[80vh]">
+          <div className="modal-content max-w-lg flex flex-col max-h-[85vh]">
             <h2 className="mb-2">過去のスタッフ履歴から追加</h2>
             <p className="text-sm text-gray-500 mb-4">
               これまでに登録されたことのあるスタッフ一覧です。今回のイベントに参加する人にチェックを入れてください。<br/>
-              ※「名前」と「権限」のみインポートされます。勤務時間はイベントの基本時間が自動で入ります。
+              ※「名前」と「権限」のみインポートされます。
             </p>
             
-            <div className="flex-1 overflow-y-auto mb-4 border rounded p-2">
+            <div className="bg-gray-50 p-3 rounded-lg mb-4 border flex items-center justify-between gap-4">
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">一括設定する勤務時間:</span>
+              <div className="flex items-center gap-2">
+                <input type="time" className="border rounded p-1 text-sm bg-white" value={importStartTime} onChange={e => setImportStartTime(e.target.value)} />
+                <span className="text-gray-500">〜</span>
+                <input type="time" className="border rounded p-1 text-sm bg-white" value={importEndTime} onChange={e => setImportEndTime(e.target.value)} />
+              </div>
+            </div>
+            
+            <div className="flex justify-between items-center mb-2 px-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 text-primary"
+                  checked={
+                    GlobalStaffList.filter(g => !Staff.some(s => s.name === g.name)).length > 0 &&
+                    selectedImportNames.length === GlobalStaffList.filter(g => !Staff.some(s => s.name === g.name)).length
+                  }
+                  onChange={(e) => {
+                    const availableNames = GlobalStaffList.filter(g => !Staff.some(s => s.name === g.name)).map(g => g.name);
+                    if (e.target.checked) {
+                      setSelectedImportNames(availableNames);
+                    } else {
+                      setSelectedImportNames([]);
+                    }
+                  }}
+                />
+                <span className="text-sm font-medium text-gray-700">すべて選択</span>
+              </label>
+              
+              <select 
+                className="border-gray-300 rounded-md p-1 text-sm bg-gray-50"
+                value={importSortType}
+                onChange={e => setImportSortType(e.target.value as any)}
+              >
+                <option value="name">名簿順 (あいうえお順)</option>
+                <option value="WCP">WCPを上に表示</option>
+                <option value="volunteer">ボランティアを上に表示</option>
+              </select>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto mb-4 border rounded p-2 bg-gray-50/50">
               {GlobalStaffList.length === 0 ? (
                 <p className="text-gray-500 text-sm p-4 text-center">履歴がありません</p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {GlobalStaffList.filter(g => !Staff.some(s => s.name === g.name)).map(g => (
+                  {[...GlobalStaffList]
+                    .filter(g => !Staff.some(s => s.name === g.name))
+                    .sort((a, b) => {
+                      if (importSortType === 'name') {
+                        return a.name.localeCompare(b.name, 'ja');
+                      } else if (importSortType === 'WCP') {
+                        if (a.role === 'WCP' && b.role !== 'WCP') return -1;
+                        if (a.role !== 'WCP' && b.role === 'WCP') return 1;
+                        return a.name.localeCompare(b.name, 'ja');
+                      } else {
+                        if (a.role === 'ボランティア' && b.role !== 'ボランティア') return -1;
+                        if (a.role !== 'ボランティア' && b.role === 'ボランティア') return 1;
+                        return a.name.localeCompare(b.name, 'ja');
+                      }
+                    })
+                    .map(g => (
                     <label key={g.name} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer border border-transparent hover:border-gray-200">
                       <input 
                         type="checkbox" 

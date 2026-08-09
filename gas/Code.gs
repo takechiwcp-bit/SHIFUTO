@@ -135,7 +135,46 @@ function getHeadersForSheet(sheetName) {
   }
 }
 
+function autoMigrateLegacyData() {
+  const events = getSheetData('Events');
+  if (events.length === 0) return;
+  
+  // SPARK FESを優先して探し、なければ最初のイベントをターゲットにする
+  let targetEventId = events[0].id;
+  const sparkEvent = events.find(e => String(e.name).toUpperCase().includes('SPARK'));
+  if (sparkEvent) {
+    targetEventId = sparkEvent.id;
+  }
+  
+  const sheetsToMigrate = ['Staff', 'PositionCategories'];
+  
+  sheetsToMigrate.forEach(sheetName => {
+    const sheet = getOrCreateSheet(sheetName);
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+    if (values.length < 2) return;
+    
+    const eventIdIdx = values[0].indexOf('eventId');
+    if (eventIdIdx === -1) return;
+    
+    let updated = false;
+    for (let i = 1; i < values.length; i++) {
+      if (!values[i][eventIdIdx] || String(values[i][eventIdIdx]).trim() === '') {
+        values[i][eventIdIdx] = targetEventId;
+        updated = true;
+      }
+    }
+    
+    if (updated) {
+      sheet.getRange(1, 1, values.length, values[0].length).setValues(values);
+    }
+  });
+}
+
 function fetchOptimizedData(eventId) {
+  // 古いデータ（eventIdがないデータ）を自動的にSPARK FESに紐付ける
+  autoMigrateLegacyData();
+
   const allStaff = getSheetData('Staff');
   const globalStaffMap = new Map();
   
@@ -160,10 +199,8 @@ function fetchOptimizedData(eventId) {
   if (eventId) {
     const staff = allStaff.filter(s => String(s.eventId) === String(eventId));
     
-    // Allow legacy categories without eventId to be visible to prevent them from disappearing
-    const categories = getSheetData('PositionCategories').filter(c => 
-      !c.eventId || String(c.eventId) === String(eventId)
-    );
+    // 移行済みのカテゴリをeventIdで正確に絞り込む
+    const categories = getSheetData('PositionCategories').filter(c => String(c.eventId) === String(eventId));
     const categoryIds = categories.map(c => String(c.id));
     
     const positions = getSheetData('Positions').filter(p => categoryIds.includes(String(p.categoryId)));
