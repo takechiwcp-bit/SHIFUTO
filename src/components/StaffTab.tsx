@@ -67,9 +67,9 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
         id: crypto.randomUUID(),
         eventId,
         name: template?.name || name,
-        availableStartTime: template?.availableStartTime || defaultStartTime,
-        availableEndTime: template?.availableEndTime || defaultEndTime,
-        remarks: template?.remarks || '',
+        availableStartTime: defaultStartTime,
+        availableEndTime: defaultEndTime,
+        remarks: '',
         role: template?.role || 'ボランティア'
       };
     });
@@ -295,7 +295,8 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
           <div className="modal-content max-w-md flex flex-col max-h-[80vh]">
             <h2 className="mb-2">過去のスタッフ履歴から追加</h2>
             <p className="text-sm text-gray-500 mb-4">
-              これまでに登録されたことのあるスタッフ一覧です。今回のイベントに参加する人にチェックを入れてください。
+              これまでに登録されたことのあるスタッフ一覧です。今回のイベントに参加する人にチェックを入れてください。<br/>
+              ※「名前」と「権限」のみインポートされます。勤務時間はイベントの基本時間が自動で入ります。
             </p>
             
             <div className="flex-1 overflow-y-auto mb-4 border rounded p-2">

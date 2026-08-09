@@ -141,12 +141,12 @@ function fetchOptimizedData(eventId) {
   
   // Deduplicate staff by name to create a history template list
   allStaff.forEach(s => {
-    if (s.name && !globalStaffMap.has(s.name)) {
-      globalStaffMap.set(s.name, {
-        name: s.name,
-        availableStartTime: s.availableStartTime,
-        availableEndTime: s.availableEndTime,
-        remarks: s.remarks,
+    const originalName = String(s.name || '').trim();
+    const normalizedName = originalName.replace(/\s+/g, '');
+    
+    if (normalizedName && !globalStaffMap.has(normalizedName)) {
+      globalStaffMap.set(normalizedName, {
+        name: originalName,
         role: s.role
       });
     }
