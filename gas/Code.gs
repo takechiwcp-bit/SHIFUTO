@@ -171,9 +171,42 @@ function autoMigrateLegacyData() {
   });
 }
 
+function removeDuplicateStaff() {
+  const sheet = getOrCreateSheet('Staff');
+  const values = sheet.getDataRange().getValues();
+  if (values.length < 2) return;
+  
+  const headers = values[0];
+  const nameIdx = headers.indexOf('name');
+  const eventIdIdx = headers.indexOf('eventId');
+  
+  const seen = new Set();
+  const uniqueRows = [headers];
+  let hasDuplicates = false;
+  
+  for (let i = 1; i < values.length; i++) {
+    const eventId = String(values[i][eventIdIdx]);
+    const name = String(values[i][nameIdx] || '').replace(/\s+/g, '');
+    const key = eventId + '_' + name;
+    
+    if (seen.has(key)) {
+      hasDuplicates = true;
+    } else {
+      seen.add(key);
+      uniqueRows.push(values[i]);
+    }
+  }
+  
+  if (hasDuplicates) {
+    sheet.clearContents();
+    sheet.getRange(1, 1, uniqueRows.length, headers.length).setValues(uniqueRows);
+  }
+}
+
 function fetchOptimizedData(eventId) {
-  // 古いデータ（eventIdがないデータ）を自動的にSPARK FESに紐付ける
-  autoMigrateLegacyData();
+  // 以下のマイグレーション・重複削除処理は完了したため無効化（パフォーマンス向上のため）
+  // autoMigrateLegacyData();
+  // removeDuplicateStaff();
 
   const allStaff = getSheetData('Staff');
   const globalStaffMap = new Map();

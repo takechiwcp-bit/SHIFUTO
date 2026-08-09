@@ -304,17 +304,17 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
               ※「名前」と「権限」のみインポートされます。
             </p>
             
-            <div className="bg-gray-50 p-3 rounded-lg mb-4 border flex items-center justify-between gap-4">
+            <div className="bg-gray-50 p-3 rounded-lg mb-4 border flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm font-medium text-gray-700 whitespace-nowrap">一括設定する勤務時間:</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 whitespace-nowrap">
                 <input type="time" className="border rounded p-1 text-sm bg-white" value={importStartTime} onChange={e => setImportStartTime(e.target.value)} />
                 <span className="text-gray-500">〜</span>
                 <input type="time" className="border rounded p-1 text-sm bg-white" value={importEndTime} onChange={e => setImportEndTime(e.target.value)} />
               </div>
             </div>
             
-            <div className="flex justify-between items-center mb-2 px-1">
-              <label className="flex items-center gap-2 cursor-pointer">
+            <div className="flex flex-wrap justify-between items-center mb-2 px-1 gap-2">
+              <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
                 <input 
                   type="checkbox" 
                   className="w-4 h-4 text-primary"
@@ -351,7 +351,6 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
               ) : (
                 <div className="flex flex-col gap-2">
                   {[...GlobalStaffList]
-                    .filter(g => !Staff.some(s => s.name === g.name))
                     .sort((a, b) => {
                       if (importSortType === 'name') {
                         return a.name.localeCompare(b.name, 'ja');
@@ -365,35 +364,38 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
                         return a.name.localeCompare(b.name, 'ja');
                       }
                     })
-                    .map(g => (
-                    <label key={g.name} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer border border-transparent hover:border-gray-200">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 text-primary"
-                        checked={selectedImportNames.includes(g.name)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedImportNames([...selectedImportNames, g.name]);
-                          } else {
-                            setSelectedImportNames(selectedImportNames.filter(n => n !== g.name));
-                          }
-                        }}
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium flex items-center gap-2">
-                          {g.name}
-                          {g.role === 'WCP' ? (
-                            <span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">WCP</span>
-                          ) : (
-                            <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">ボランティア</span>
-                          )}
+                    .map(g => {
+                      const isAlreadyAdded = Staff.some(s => s.name === g.name);
+                      return (
+                      <label key={g.name} className={`flex items-center gap-3 p-2 rounded border border-transparent ${isAlreadyAdded ? 'opacity-50 bg-gray-50 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer hover:border-gray-200'}`}>
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 text-primary"
+                          checked={isAlreadyAdded || selectedImportNames.includes(g.name)}
+                          disabled={isAlreadyAdded}
+                          onChange={(e) => {
+                            if (isAlreadyAdded) return;
+                            if (e.target.checked) {
+                              setSelectedImportNames([...selectedImportNames, g.name]);
+                            } else {
+                              setSelectedImportNames(selectedImportNames.filter(n => n !== g.name));
+                            }
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium flex items-center gap-2 flex-wrap">
+                            <span className="truncate">{g.name}</span>
+                            {isAlreadyAdded && <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-bold">追加済み</span>}
+                            {g.role === 'WCP' ? (
+                              <span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">WCP</span>
+                            ) : (
+                              <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">ボランティア</span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </label>
-                  ))}
-                  {GlobalStaffList.filter(g => !Staff.some(s => s.name === g.name)).length === 0 && GlobalStaffList.length > 0 && (
-                     <p className="text-gray-500 text-sm p-4 text-center">履歴にあるすべてのスタッフがすでに追加されています</p>
-                  )}
+                      </label>
+                    );
+                  })}
                 </div>
               )}
             </div>
