@@ -160,7 +160,10 @@ function fetchOptimizedData(eventId) {
   if (eventId) {
     const staff = allStaff.filter(s => String(s.eventId) === String(eventId));
     
-    const categories = getSheetData('PositionCategories').filter(c => String(c.eventId) === String(eventId));
+    // Allow legacy categories without eventId to be visible to prevent them from disappearing
+    const categories = getSheetData('PositionCategories').filter(c => 
+      !c.eventId || String(c.eventId) === String(eventId)
+    );
     const categoryIds = categories.map(c => String(c.id));
     
     const positions = getSheetData('Positions').filter(p => categoryIds.includes(String(p.categoryId)));
