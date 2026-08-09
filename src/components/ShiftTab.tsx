@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
-import { Calendar, UserPlus, X, Wand2, Users, Clock, Search, ChevronDown, ChevronRight, Folder, Printer, Download } from 'lucide-react';
+import { Calendar, UserPlus, X, Wand2, Users, Clock, Search, ChevronDown, ChevronRight, Folder } from 'lucide-react';
 import type { Staff, Shift } from '../types';
-import { TimelineView } from './TimelineView';
 
 interface ShiftTabProps {
   eventId: string;
@@ -46,7 +45,6 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
   const currentEvent = Events.find(e => e.id === eventId);
   const [searchQuery, setSearchQuery] = useState('');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'card' | 'timeline'>('card');
   const [isSortedByTrait, setIsSortedByTrait] = useState(false);
   const [expandedCategoryIds, setExpandedCategoryIds] = useState<string[]>([]);
   const eventCategories = PositionCategories.filter(c => c.eventId === eventId);
@@ -135,64 +133,6 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
     }
   };
 
-  const handlePrint = () => {
-    // 印刷時はすべて開くために expandedCategoryIds をすべてセット
-    const allIds = eventCategories.map(c => c.id);
-    const prevIds = [...expandedCategoryIds];
-    setExpandedCategoryIds(allIds);
-    setTimeout(() => {
-      window.print();
-      // 印刷ダイアログが閉じたら元に戻す
-      setTimeout(() => setExpandedCategoryIds(prevIds), 100);
-    }, 500); // タイムラインのレンダリング待ちのため少し長めに待機
-  };
-
-  const exportToCSV = () => {
-    const rows = [
-      ['日付', 'イベント名', 'カテゴリー', 'ポジション', '時間枠', 'スタッフ名']
-    ];
-    
-    eventCategories.forEach(cat => {
-      const catPos = eventPositions.filter(p => p.categoryId === cat.id);
-      catPos.forEach(pos => {
-        const posShifts = Shifts.filter(s => s.positionId === pos.id);
-        
-        // Sort shifts by time
-        posShifts.sort((a, b) => {
-          const startA = (a.timeBlock || '').split('-')[0] || '';
-          const startB = (b.timeBlock || '').split('-')[0] || '';
-          return startA.localeCompare(startB);
-        });
-
-        posShifts.forEach(shift => {
-          const staff = Staff.find(s => s.id === shift.staffId);
-          const staffName = staff ? staff.name : '不明';
-          rows.push([
-            currentEvent?.date || '',
-            currentEvent?.name || '',
-            cat.name,
-            pos.name,
-            shift.timeBlock || '',
-            staffName
-          ]);
-        });
-      });
-    });
-
-    // Add BOM for Excel to prevent mojibake
-    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-    const csvContent = rows.map(e => e.map(cell => `"${cell}"`).join(",")).join("\n");
-    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${currentEvent?.name || 'シフトデータ'}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   if (eventPositions.length === 0) {
     return (
       <div className="glass-panel text-center py-12 text-gray-500">
@@ -272,50 +212,19 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
       </div>
 
       <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 no-print">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="flex bg-gray-100 p-1 rounded-lg">
-            <button
-              className={`px-4 py-2 rounded-md text-sm font-bold transition-colors ${viewMode === 'card' ? 'bg-white shadow-sm text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-              onClick={() => setViewMode('card')}
-            >
-              カード表示
-            </button>
-            <button
-              className={`px-4 py-2 rounded-md text-sm font-bold transition-colors ${viewMode === 'timeline' ? 'bg-white shadow-sm text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-              onClick={() => setViewMode('timeline')}
-            >
-              タイムライン (印刷用)
-            </button>
+        <div className="flex-1 max-w-md">
+          <div className="relative">
+            <input 
+              type="text" 
+              placeholder="ポジション、カテゴリー、人物名で検索..." 
+              value={globalSearchQuery}
+              onChange={e => setGlobalSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-primary transition-all outline-none"
+            />
+            <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
           </div>
-          
-          {viewMode === 'card' && (
-            <div className="flex-1 max-w-md relative hidden md:block">
-              <input 
-                type="text" 
-                placeholder="ポジション、カテゴリー、人物名で検索..." 
-                value={globalSearchQuery}
-                onChange={e => setGlobalSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-primary transition-all outline-none"
-              />
-              <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
-            </div>
-          )}
         </div>
         <div className="flex gap-2">
-          <button 
-            className="btn bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center gap-2"
-            onClick={exportToCSV}
-          >
-            <Download size={18} />
-            CSV
-          </button>
-          <button 
-            className="btn bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center gap-2 mr-2"
-            onClick={handlePrint}
-          >
-            <Printer size={18} />
-            PDF / 印刷
-          </button>
           <button 
             className="btn flex items-center gap-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
             onClick={() => {
@@ -337,9 +246,6 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
         </div>
       </div>
 
-      {viewMode === 'timeline' ? (
-        <TimelineView eventId={eventId} />
-      ) : (
       <div className="flex flex-col gap-10">
         {eventCategories.map(category => {
           const categoryPositions = eventPositions.filter(p => p.categoryId === category.id);
@@ -502,7 +408,6 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
           );
         })}
       </div>
-      )}
 
       {assignModal && (
         <div className="modal-overlay">
