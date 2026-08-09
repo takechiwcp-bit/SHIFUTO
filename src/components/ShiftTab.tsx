@@ -201,8 +201,74 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
     );
   }
 
+  let totalMissing = 0;
+  const missingByTime: Record<string, number> = {};
+
+  eventPositions.forEach(pos => {
+    let blocks = [];
+    if (pos.isFixed) {
+      blocks = [`${pos.startTime}-${pos.endTime}`];
+    } else {
+      blocks = generateTimeBlocks(pos.startTime, pos.endTime, pos.unitTime);
+    }
+
+    blocks.forEach(timeBlock => {
+      for (let slotIndex = 0; slotIndex < pos.requiredPeople; slotIndex++) {
+        const isAssigned = Shifts.some(s => s.positionId === pos.id && s.slotIndex === slotIndex && s.timeBlock === timeBlock);
+        
+        if (!isAssigned) {
+          totalMissing++;
+          missingByTime[timeBlock] = (missingByTime[timeBlock] || 0) + 1;
+        }
+      }
+    });
+  });
+
+  let maxMissingTime = '-';
+  let maxMissingCount = 0;
+  let tiedTimes: string[] = [];
+  
+  const sortedTimes = Object.entries(missingByTime).sort((a, b) => a[0].localeCompare(b[0]));
+  
+  for (const [time, count] of sortedTimes) {
+    if (count > maxMissingCount) {
+      maxMissingCount = count;
+      tiedTimes = [time];
+    } else if (count === maxMissingCount) {
+      tiedTimes.push(time);
+    }
+  }
+  
+  if (tiedTimes.length > 2) {
+    maxMissingTime = `${tiedTimes[0]} ほか${tiedTimes.length - 1}件`;
+  } else {
+    maxMissingTime = tiedTimes.join(', ');
+  }
+
   return (
     <div className="flex flex-col gap-6">
+      <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-center justify-between shadow-sm no-print">
+        <div className="flex items-center gap-4">
+          <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 min-w-[150px]">
+            <div className="text-sm text-gray-500 font-bold mb-1">全体の不足枠数</div>
+            <div className="text-2xl font-black text-indigo-700">{totalMissing} <span className="text-sm font-medium text-gray-500">枠</span></div>
+          </div>
+          {maxMissingCount > 0 && (
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+              <div className="text-sm text-gray-500 font-bold mb-1">最も人が足りていない時間</div>
+              <div className="text-lg font-bold text-red-500 flex items-center gap-2">
+                <Clock size={18} />
+                {maxMissingTime}
+                <span className="text-sm font-medium text-gray-500">({maxMissingCount}枠不足)</span>
+              </div>
+            </div>
+          )}
+        </div>
+        <div>
+           {totalMissing === 0 && <div className="text-green-600 font-bold px-4 py-2 bg-green-50 rounded-lg border border-green-100 flex items-center gap-2">🎉 すべてのシフトが埋まっています！</div>}
+        </div>
+      </div>
+
       <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 no-print">
         <div className="flex-1 max-w-md">
           <div className="relative">
