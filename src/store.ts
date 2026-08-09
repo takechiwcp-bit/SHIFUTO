@@ -21,6 +21,7 @@ export const useStore = create<StoreState>((set, get) => ({
   Staff: [],
   StaffTraits: [],
   Shifts: [],
+  GlobalStaffList: [],
   activeEventId: null,
   loading: false,
   error: null,
@@ -52,6 +53,7 @@ export const useStore = create<StoreState>((set, get) => ({
           Staff: result.data.Staff || [],
           StaffTraits: result.data.StaffTraits || [],
           Shifts: validShifts,
+          GlobalStaffList: result.data.GlobalStaffList || [],
           error: null,
           isLoading: false
         });
@@ -91,6 +93,7 @@ export const useStore = create<StoreState>((set, get) => ({
           Staff: result.data.Staff || [],
           StaffTraits: result.data.StaffTraits || [],
           Shifts: validShifts,
+          GlobalStaffList: result.data.GlobalStaffList || [],
           error: null
         });
       } else {

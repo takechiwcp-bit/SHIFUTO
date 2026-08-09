@@ -30,9 +30,18 @@ export interface Position {
 
 export interface Staff {
   id: string;
+  eventId: string;
   name: string;
   availableStartTime?: string; // HH:mm
   availableEndTime?: string; // HH:mm
+  remarks: string;
+  role?: 'WCP' | 'ボランティア';
+}
+
+export interface StaffTemplate {
+  name: string;
+  availableStartTime?: string;
+  availableEndTime?: string;
   remarks: string;
   role?: 'WCP' | 'ボランティア';
 }
@@ -58,4 +67,5 @@ export interface AppState {
   Staff: Staff[];
   StaffTraits: StaffTrait[];
   Shifts: Shift[];
+  GlobalStaffList: StaffTemplate[];
 }

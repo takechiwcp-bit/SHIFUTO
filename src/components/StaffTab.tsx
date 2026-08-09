@@ -7,10 +7,13 @@ interface StaffTabProps {
 }
 
 export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
-  const { Events, Staff, Positions, PositionCategories, StaffTraits, dispatchAction } = useStore();
+  const { Events, Staff, Positions, PositionCategories, StaffTraits, GlobalStaffList, dispatchAction } = useStore();
   const currentEvent = Events.find(e => e.id === eventId);
   const defaultStartTime = currentEvent?.startTime || '09:00';
   const defaultEndTime = currentEvent?.endTime || '18:00';
+  
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [selectedImportNames, setSelectedImportNames] = useState<string[]>([]);
   
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffStartTime, setNewStaffStartTime] = useState(defaultStartTime);
@@ -24,7 +27,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
   }, [defaultStartTime, defaultEndTime]);
   
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
-  const [editStaffModal, setEditStaffModal] = useState<{ id: string; name: string; availableStartTime: string; availableEndTime: string; remarks: string; role?: 'WCP' | 'ボランティア' } | null>(null);
+  const [editStaffModal, setEditStaffModal] = useState<{ id: string; eventId: string; name: string; availableStartTime: string; availableEndTime: string; remarks: string; role?: 'WCP' | 'ボランティア' } | null>(null);
 
   const eventCategories = PositionCategories.filter(c => c.eventId === eventId);
   const eventCategoryIds = eventCategories.map(c => c.id);
@@ -34,6 +37,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
     if (!newStaffName) return;
     dispatchAction('ADD_STAFF', {
       id: crypto.randomUUID(),
+      eventId,
       name: newStaffName,
       availableStartTime: newStaffStartTime,
       availableEndTime: newStaffEndTime,
@@ -53,6 +57,26 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
       positionId,
       trait
     });
+  };
+
+  const handleBulkImport = () => {
+    if (selectedImportNames.length === 0) return;
+    const payloads = selectedImportNames.map(name => {
+      const template = GlobalStaffList.find(g => g.name === name);
+      return {
+        id: crypto.randomUUID(),
+        eventId,
+        name: template?.name || name,
+        availableStartTime: template?.availableStartTime || defaultStartTime,
+        availableEndTime: template?.availableEndTime || defaultEndTime,
+        remarks: template?.remarks || '',
+        role: template?.role || 'ボランティア'
+      };
+    });
+    
+    dispatchAction('BULK_ADD_STAFF', payloads);
+    setImportModalOpen(false);
+    setSelectedImportNames([]);
   };
 
   return (
@@ -86,6 +110,18 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
           <textarea value={newStaffRemarks} onChange={e => setNewStaffRemarks(e.target.value)} rows={2}></textarea>
         </div>
         <button className="btn btn-primary w-full" onClick={handleCreateStaff}>追加する</button>
+        
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <button 
+            className="btn btn-secondary w-full text-sm border-dashed"
+            onClick={() => {
+              setSelectedImportNames([]);
+              setImportModalOpen(true);
+            }}
+          >
+            過去の履歴から一括追加...
+          </button>
+        </div>
 
         <div className="mt-6">
           <h3 className="mb-2 text-sm text-gray-500">スタッフ一覧 (クリックで詳細)</h3>
@@ -119,6 +155,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
                         e.stopPropagation();
                         setEditStaffModal({
                           id: s.id,
+                          eventId: s.eventId || eventId,
                           name: s.name,
                           availableStartTime: s.availableStartTime || defaultStartTime,
                           availableEndTime: s.availableEndTime || defaultEndTime,
@@ -236,6 +273,7 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
                   if (!editStaffModal.name) return;
                   dispatchAction('UPDATE_STAFF', {
                     id: editStaffModal.id,
+                    eventId: editStaffModal.eventId,
                     name: editStaffModal.name,
                     availableStartTime: editStaffModal.availableStartTime,
                     availableEndTime: editStaffModal.availableEndTime,
@@ -246,6 +284,66 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
                 }}
               >
                 保存する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {importModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content max-w-md flex flex-col max-h-[80vh]">
+            <h2 className="mb-2">過去のスタッフ履歴から追加</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              これまでに登録されたことのあるスタッフ一覧です。今回のイベントに参加する人にチェックを入れてください。
+            </p>
+            
+            <div className="flex-1 overflow-y-auto mb-4 border rounded p-2">
+              {GlobalStaffList.length === 0 ? (
+                <p className="text-gray-500 text-sm p-4 text-center">履歴がありません</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {GlobalStaffList.filter(g => !Staff.some(s => s.name === g.name)).map(g => (
+                    <label key={g.name} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer border border-transparent hover:border-gray-200">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-primary"
+                        checked={selectedImportNames.includes(g.name)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedImportNames([...selectedImportNames, g.name]);
+                          } else {
+                            setSelectedImportNames(selectedImportNames.filter(n => n !== g.name));
+                          }
+                        }}
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium flex items-center gap-2">
+                          {g.name}
+                          {g.role === 'WCP' ? (
+                            <span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">WCP</span>
+                          ) : (
+                            <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">ボランティア</span>
+                          )}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                  {GlobalStaffList.filter(g => !Staff.some(s => s.name === g.name)).length === 0 && GlobalStaffList.length > 0 && (
+                     <p className="text-gray-500 text-sm p-4 text-center">履歴にあるすべてのスタッフがすでに追加されています</p>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex gap-4 mt-auto">
+              <button className="btn btn-secondary flex-1" onClick={() => setImportModalOpen(false)}>キャンセル</button>
+              <button 
+                className="btn btn-primary flex-1" 
+                onClick={handleBulkImport}
+                disabled={selectedImportNames.length === 0}
+              >
+                選択した {selectedImportNames.length} 人を追加
               </button>
             </div>
           </div>

@@ -52,6 +52,9 @@ function doPost(e) {
       case 'ADD_STAFF':
         result = addRecord('Staff', payload);
         break;
+      case 'BULK_ADD_STAFF':
+        result = bulkAddRecord('Staff', payload);
+        break;
       case 'UPDATE_STAFF':
         result = updateRecord('Staff', payload);
         break;
@@ -125,7 +128,7 @@ function getHeadersForSheet(sheetName) {
       return ['id', 'name', 'date', 'startTime', 'endTime', 'remarks', 'workMinutesBeforeBreak', 'breakMinutes'];
     case 'PositionCategories': return ['id', 'eventId', 'name', 'allowedRole'];
     case 'Positions': return ['id', 'categoryId', 'name', 'requiredPeople', 'unitTime', 'startTime', 'endTime', 'remarks', 'isFixed'];
-    case 'Staff': return ['id', 'name', 'availableStartTime', 'availableEndTime', 'remarks', 'role'];
+    case 'Staff': return ['id', 'name', 'availableStartTime', 'availableEndTime', 'remarks', 'role', 'eventId'];
     case 'StaffTraits': return ['staffId', 'positionId', 'trait'];
     case 'Shifts': return ['id', 'positionId', 'timeBlock', 'slotIndex', 'staffId'];
     default: return [];
@@ -133,12 +136,30 @@ function getHeadersForSheet(sheetName) {
 }
 
 function fetchOptimizedData(eventId) {
+  const allStaff = getSheetData('Staff');
+  const globalStaffMap = new Map();
+  
+  // Deduplicate staff by name to create a history template list
+  allStaff.forEach(s => {
+    if (s.name && !globalStaffMap.has(s.name)) {
+      globalStaffMap.set(s.name, {
+        name: s.name,
+        availableStartTime: s.availableStartTime,
+        availableEndTime: s.availableEndTime,
+        remarks: s.remarks,
+        role: s.role
+      });
+    }
+  });
+
   const result = {
     Events: getSheetData('Events'),
-    Staff: getSheetData('Staff')
+    GlobalStaffList: Array.from(globalStaffMap.values())
   };
   
   if (eventId) {
+    const staff = allStaff.filter(s => String(s.eventId) === String(eventId));
+    
     const categories = getSheetData('PositionCategories').filter(c => String(c.eventId) === String(eventId));
     const categoryIds = categories.map(c => String(c.id));
     
@@ -152,11 +173,13 @@ function fetchOptimizedData(eventId) {
     result.Positions = positions;
     result.Shifts = shifts;
     result.StaffTraits = traits;
+    result.Staff = staff;
   } else {
     result.PositionCategories = [];
     result.Positions = [];
     result.Shifts = [];
     result.StaffTraits = [];
+    result.Staff = [];
   }
   
   return result;
@@ -203,6 +226,19 @@ function addRecord(sheetName, payload) {
   const newRow = headers.map(header => payload[header] !== undefined ? payload[header] : "");
   sheet.appendRow(newRow);
   return payload;
+}
+
+function bulkAddRecord(sheetName, payloads) {
+  if (!payloads || payloads.length === 0) return payloads;
+  const sheet = getOrCreateSheet(sheetName);
+  const headers = getHeadersForSheet(sheetName);
+  const rowsToAppend = payloads.map(payload => 
+    headers.map(header => payload[header] !== undefined ? payload[header] : "")
+  );
+  if (rowsToAppend.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rowsToAppend.length, headers.length).setValues(rowsToAppend);
+  }
+  return payloads;
 }
 
 function updateRecord(sheetName, payload) {
