@@ -18,22 +18,30 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
 
   const [editEventModal, setEditEventModal] = useState<{ id: string; name: string; date: string; startTime: string; endTime: string; remarks: string; workMinutesBeforeBreak?: number; breakMinutes?: number } | null>(null);
 
-  const handleCreateEvent = () => {
+  const handleCreateEvent = async () => {
     if (!newEventName || !newEventDate) return;
     const newId = crypto.randomUUID();
-    dispatchAction('ADD_EVENT', {
+    
+    // API呼び出しを待機する
+    await dispatchAction('ADD_EVENT', {
       id: newId,
       name: newEventName,
       date: newEventDate,
       startTime: newEventStartTime,
       endTime: newEventEndTime,
-      remarks: newEventRemarks
+      remarks: newEventRemarks,
+      workMinutesBeforeBreak: parseInt(newEventWorkMinutes) || 0,
+      breakMinutes: parseInt(newEventBreakMinutes) || 0
     });
+    
     setNewEventName('');
     setNewEventDate('');
     setNewEventStartTime('09:00');
     setNewEventEndTime('18:00');
     setNewEventRemarks('');
+    setNewEventWorkMinutes('240');
+    setNewEventBreakMinutes('60');
+    
     // After creating, automatically enter that event
     onSelectEvent(newId);
   };

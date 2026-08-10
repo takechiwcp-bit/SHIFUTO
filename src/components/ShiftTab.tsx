@@ -301,23 +301,35 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                           <div>
                             <h3 className="text-lg font-bold text-primary">{pos.name}</h3>
                             <p className="text-sm text-gray-500 mt-1">
-                              設定時間: {pos.startTime}〜{pos.endTime} / 必要人数: {pos.requiredPeople}名 / 備考: {pos.remarks}
+                              設定時間: {pos.startTime}〜{pos.endTime} / 必要人数: {pos.requiredPeople === -1 ? '全員' : `${pos.requiredPeople}名`} / 備考: {pos.remarks}
                             </p>
                           </div>
                         </div>
                       
                       <div className="flex flex-col p-4 gap-4">
-                        {Array.from({ length: pos.requiredPeople }).map((_, slotIndex) => {
-                          const assignedShifts = Shifts.filter(s => s.positionId === pos.id && s.slotIndex === slotIndex);
-                          
-                          // Sort shifts by start time
-                          assignedShifts.sort((a, b) => {
-                            const startA = (a.timeBlock || '').split('-')[0] || '';
-                            const startB = (b.timeBlock || '').split('-')[0] || '';
-                            return startA.localeCompare(startB);
-                          });
+                        {(() => {
+                          let slotCount = pos.requiredPeople;
+                          if (slotCount === -1) {
+                            const cat = PositionCategories.find(c => c.id === pos.categoryId);
+                            const eligibleStaff = Staff.filter(s => {
+                              if (cat?.allowedRole === 'WCP' && s.role !== 'WCP') return false;
+                              if (cat?.allowedRole === 'ボランティア' && s.role !== 'ボランティア') return false;
+                              return true;
+                            });
+                            slotCount = eligibleStaff.length > 0 ? eligibleStaff.length : 1;
+                          }
 
-                          return (
+                          return Array.from({ length: slotCount }).map((_, slotIndex) => {
+                            const assignedShifts = Shifts.filter(s => s.positionId === pos.id && s.slotIndex === slotIndex);
+                            
+                            // Sort shifts by start time
+                            assignedShifts.sort((a, b) => {
+                              const startA = (a.timeBlock || '').split('-')[0] || '';
+                              const startB = (b.timeBlock || '').split('-')[0] || '';
+                              return startA.localeCompare(startB);
+                            });
+
+                            return (
                             <div key={slotIndex} className="flex flex-col border border-gray-200 rounded-lg overflow-hidden">
                               <div className="bg-gray-100 p-2 border-b border-gray-200 font-bold text-gray-700 text-sm flex items-center gap-2">
                                 <Users size={16} />
@@ -397,7 +409,8 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                               </div>
                             </div>
                           );
-                        })}
+                          });
+                        })()}
                       </div>
                     </div>
                   );
@@ -531,19 +544,22 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                         }
                       }
 
+                      const slotDuration = parseTime(assignModal.endTime) - parseTime(assignModal.startTime);
                       let continuousWorkMins = 0;
                       if (lastEnd !== -1) {
                         const gapToNewShift = parseTime(assignModal.startTime) - lastEnd;
                         if (gapToNewShift < currentEvent.breakMinutes) {
                           continuousWorkMins = parseTime(assignModal.endTime) - currentContinuousStart;
                         } else {
-                          continuousWorkMins = parseTime(assignModal.endTime) - parseTime(assignModal.startTime);
+                          continuousWorkMins = slotDuration;
                         }
                       } else {
-                        continuousWorkMins = parseTime(assignModal.endTime) - parseTime(assignModal.startTime);
+                        continuousWorkMins = slotDuration;
                       }
 
-                      if (continuousWorkMins > currentEvent.workMinutesBeforeBreak) {
+                      // 枠単体で上限を超えている場合は、ユーザーが意図して作成した枠なので警告を出さない
+                      // 他のシフトとの組み合わせで上限を超える場合のみ警告する
+                      if (continuousWorkMins > currentEvent.workMinutesBeforeBreak && continuousWorkMins > slotDuration) {
                         needsBreak = true;
                       }
                     }

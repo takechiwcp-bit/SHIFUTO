@@ -37,32 +37,38 @@ export const useStore = create<StoreState>((set, get) => ({
       const { activeEventId } = get();
       const url = activeEventId ? `${API_URL}?eventId=${activeEventId}` : API_URL;
       const response = await fetch(url);
-      const result = await response.json();
-      if (result.success) {
-        const positions = result.data.Positions || [];
-        const validShifts = (result.data.Shifts || []).filter((s: any) => {
-          const p = positions.find((pos: any) => pos.id === s.positionId);
-          if (!p) return false;
-          if (s.slotIndex >= p.requiredPeople) return false;
-          return true;
-        });
-        set({
-          Events: result.data.Events || [],
-          PositionCategories: result.data.PositionCategories || [],
-          Positions: positions,
-          Staff: result.data.Staff || [],
-          StaffTraits: result.data.StaffTraits || [],
-          Shifts: validShifts,
-          GlobalStaffList: result.data.GlobalStaffList || [],
-          error: null,
-          isLoading: false
-        });
-      } else {
-        set({ error: result.error, isLoading: false });
+      const text = await response.text();
+      try {
+        const result = JSON.parse(text);
+        if (result.success) {
+          const positions = result.data.Positions || [];
+          const validShifts = (result.data.Shifts || []).filter((s: any) => {
+            const p = positions.find((pos: any) => pos.id === s.positionId);
+            if (!p) return false;
+            if (p.requiredPeople !== -1 && s.slotIndex >= p.requiredPeople) return false;
+            return true;
+          });
+          set({
+            Events: result.data.Events || [],
+            PositionCategories: result.data.PositionCategories || [],
+            Positions: positions,
+            Staff: result.data.Staff || [],
+            StaffTraits: result.data.StaffTraits || [],
+            Shifts: validShifts,
+            GlobalStaffList: result.data.GlobalStaffList || [],
+            error: null,
+            isLoading: false
+          });
+        } else {
+          set({ error: result.error, isLoading: false });
+        }
+      } catch (parseError) {
+        console.warn("GAS returned non-JSON response:", text.slice(0, 100) + "...");
+        // Do not crash the app, just keep previous state
       }
     } catch (err: any) {
       console.error("Fetch Error:", err);
-      set({ error: err.message, isLoading: false });
+      // set({ error: err.message, isLoading: false }); // Optional: don't show error for network blips during polling
     }
   },
   
@@ -77,27 +83,33 @@ export const useStore = create<StoreState>((set, get) => ({
         },
         body: JSON.stringify({ action, payload, activeEventId })
       });
-      const result = await response.json();
-      if (result.success) {
-         const positions = result.data.Positions || [];
-         const validShifts = (result.data.Shifts || []).filter((s: any) => {
-           const p = positions.find((pos: any) => pos.id === s.positionId);
-           if (!p) return false;
-           if (s.slotIndex >= p.requiredPeople) return false;
-           return true;
-         });
-         set({
-          Events: result.data.Events || [],
-          PositionCategories: result.data.PositionCategories || [],
-          Positions: positions,
-          Staff: result.data.Staff || [],
-          StaffTraits: result.data.StaffTraits || [],
-          Shifts: validShifts,
-          GlobalStaffList: result.data.GlobalStaffList || [],
-          error: null
-        });
-      } else {
-         set({ error: result.error });
+      const text = await response.text();
+      try {
+        const result = JSON.parse(text);
+        if (result.success) {
+           const positions = result.data.Positions || [];
+           const validShifts = (result.data.Shifts || []).filter((s: any) => {
+             const p = positions.find((pos: any) => pos.id === s.positionId);
+             if (!p) return false;
+             if (p.requiredPeople !== -1 && s.slotIndex >= p.requiredPeople) return false;
+             return true;
+           });
+           set({
+            Events: result.data.Events || [],
+            PositionCategories: result.data.PositionCategories || [],
+            Positions: positions,
+            Staff: result.data.Staff || [],
+            StaffTraits: result.data.StaffTraits || [],
+            Shifts: validShifts,
+            GlobalStaffList: result.data.GlobalStaffList || [],
+            error: null
+          });
+        } else {
+           set({ error: result.error });
+        }
+      } catch (parseError) {
+        console.error("GAS returned non-JSON response:", text.slice(0, 100) + "...");
+        set({ error: "サーバーから不正な応答がありました。通信が混み合っている可能性があります。" });
       }
     } catch (err: any) {
        console.error("Dispatch Error:", err);
@@ -114,7 +126,7 @@ export const startPolling = () => {
   
   const poll = async () => {
     await useStore.getState().fetchData();
-    setTimeout(poll, 1500); // 1.5秒待機してから次のリクエストを送る（詰まり防止）
+    setTimeout(poll, 5000); // 5秒待機してから次のリクエストを送る（GASの制限回避）
   };
   
   poll();

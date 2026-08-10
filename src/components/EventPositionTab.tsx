@@ -8,6 +8,13 @@ interface EventPositionTabProps {
 
 export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) => {
   const { PositionCategories, Positions, dispatchAction } = useStore();
+
+  const getDurationMins = (start: string, end: string) => {
+    if (!start || !end) return 0;
+    const [h1, m1] = start.split(':').map(Number);
+    const [h2, m2] = end.split(':').map(Number);
+    return (h2 * 60 + m2) - (h1 * 60 + m1);
+  };
   
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryRole, setNewCategoryRole] = useState<'WCP' | 'ボランティア' | '制限なし'>('制限なし');
@@ -142,9 +149,9 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                       <tr key={pos.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
                         <td className="p-2">{cat?.name}</td>
                         <td className="p-2 font-semibold">{pos.name}</td>
-                        <td className="p-2">{pos.requiredPeople}名</td>
+                        <td className="p-2">{pos.requiredPeople === -1 ? '全員' : `${pos.requiredPeople}名`}</td>
                         <td className="p-2">{pos.startTime} - {pos.endTime}</td>
-                        <td className="p-2">{pos.unitTime}分</td>
+                        <td className="p-2">{pos.isFixed ? getDurationMins(pos.startTime, pos.endTime) : pos.unitTime}分</td>
                         <td className="p-2 whitespace-nowrap">
                           <span className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${pos.isFixed ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
                             {pos.isFixed ? '固定枠' : '変動枠'}
@@ -199,8 +206,21 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>必要人数</label>
-                <input type="number" min="1" value={posForm.requiredPeople} onChange={e => setPosForm({...posForm, requiredPeople: parseInt(e.target.value)})} />
+                <label className="flex items-center justify-between mb-2">
+                  <span className="font-bold">必要人数</span>
+                  <label className="flex items-center gap-1 cursor-pointer">
+                    <input type="checkbox" checked={posForm.requiredPeople === -1} onChange={(e) => setPosForm({...posForm, requiredPeople: e.target.checked ? -1 : 1})} />
+                    <span className="text-sm font-normal text-gray-600">全員を対象とする</span>
+                  </label>
+                </label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  value={posForm.requiredPeople === -1 ? '' : posForm.requiredPeople} 
+                  disabled={posForm.requiredPeople === -1}
+                  placeholder={posForm.requiredPeople === -1 ? '全員' : ''}
+                  onChange={e => setPosForm({...posForm, requiredPeople: parseInt(e.target.value) || 1})} 
+                />
               </div>
               <div className="form-group">
                 <label className="font-bold block mb-2">枠の種類</label>
@@ -301,8 +321,21 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label>必要人数</label>
-                <input type="number" min="1" value={editPositionModal.requiredPeople} onChange={e => setEditPositionModal({...editPositionModal, requiredPeople: parseInt(e.target.value)})} />
+                <label className="flex items-center justify-between mb-2">
+                  <span className="font-bold">必要人数</span>
+                  <label className="flex items-center gap-1 cursor-pointer">
+                    <input type="checkbox" checked={editPositionModal.requiredPeople === -1} onChange={(e) => setEditPositionModal({...editPositionModal, requiredPeople: e.target.checked ? -1 : 1})} />
+                    <span className="text-sm font-normal text-gray-600">全員を対象とする</span>
+                  </label>
+                </label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  value={editPositionModal.requiredPeople === -1 ? '' : editPositionModal.requiredPeople} 
+                  disabled={editPositionModal.requiredPeople === -1}
+                  placeholder={editPositionModal.requiredPeople === -1 ? '全員' : ''}
+                  onChange={e => setEditPositionModal({...editPositionModal, requiredPeople: parseInt(e.target.value) || 1})} 
+                />
               </div>
               <div className="form-group">
                 <label className="font-bold block mb-2">枠の種類</label>
