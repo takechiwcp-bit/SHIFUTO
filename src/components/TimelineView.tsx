@@ -66,6 +66,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ eventId }) => {
   if (maxMins <= minMins) maxMins = minMins + 60;
   
   const totalMins = maxMins - minMins;
+  
+  // 1時間あたり120pxとして最低幅を計算（15分枠でも文字が読めるように）
+  const minTimelineWidth = Math.max(800, (totalMins / 60) * 120);
 
   // Generate hour markers
   const hourMarkers: number[] = [];
@@ -111,10 +114,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ eventId }) => {
       </div>
 
       <div className="overflow-x-auto print:overflow-visible">
-        <div className="min-w-[800px]">
+        <div style={{ minWidth: `${minTimelineWidth}px` }} className="relative">
           {/* Header row (Time markers) */}
-          <div className="flex border-b border-gray-300 bg-gray-100 print:bg-white print:border-b-2 print:border-black">
-            <div className="w-32 flex-shrink-0 p-3 font-bold text-gray-600 text-sm border-r border-gray-300 flex items-center justify-center print:border-black print:text-black">
+          <div className="flex border-b border-gray-300 bg-gray-100 print:bg-white print:border-b-2 print:border-black relative">
+            <div className="sticky left-0 z-40 w-32 flex-shrink-0 p-3 font-bold text-gray-600 text-sm border-r border-gray-300 flex items-center justify-center bg-gray-100 print:static print:border-black print:text-black">
               スタッフ名
             </div>
             <div className="flex-1 relative h-10">
@@ -139,9 +142,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ eventId }) => {
               const staffShifts = eventShifts.filter(s => s.staffId === staff.id);
               
               return (
-                <div key={staff.id} className="flex border-b border-gray-200 hover:bg-gray-50 transition-colors print:border-black print:hover:bg-white page-break-inside-avoid">
+                <div key={staff.id} className="flex border-b border-gray-200 hover:bg-gray-50 transition-colors print:border-black print:hover:bg-white page-break-inside-avoid relative group">
                   {/* Name column */}
-                  <div className="w-32 flex-shrink-0 p-2 font-bold text-sm text-gray-800 border-r border-gray-200 flex flex-col justify-center bg-gray-50 print:bg-white print:border-black">
+                  <div className="sticky left-0 z-30 w-32 flex-shrink-0 p-2 font-bold text-sm text-gray-800 border-r border-gray-200 flex flex-col justify-center bg-gray-50 group-hover:bg-gray-100 transition-colors print:static print:bg-white print:border-black">
                     <span className="truncate w-full" title={staff.name}>{staff.name}</span>
                     <span className="text-[10px] text-gray-500 font-normal">{staff.role}</span>
                   </div>
@@ -158,31 +161,57 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ eventId }) => {
                     ))}
 
                     {/* Shift blocks */}
-                    {staffShifts.map(shift => {
-                      const [start, end] = (shift.timeBlock || '').split('-');
-                      if (!start || !end) return null;
+                    {(() => {
+                      const mergedShifts: { positionId: string, start: string, end: string, ids: string[] }[] = [];
                       
-                      const position = Positions.find(p => p.id === shift.positionId);
+                      const sortedShifts = [...staffShifts].sort((a, b) => {
+                        const startA = (a.timeBlock || '').split('-')[0] || '';
+                        const startB = (b.timeBlock || '').split('-')[0] || '';
+                        return startA.localeCompare(startB);
+                      });
+
+                      sortedShifts.forEach(shift => {
+                        const [start, end] = (shift.timeBlock || '').split('-');
+                        if (!start || !end) return;
+
+                        const lastMerged = mergedShifts[mergedShifts.length - 1];
+                        if (lastMerged && lastMerged.positionId === shift.positionId && lastMerged.end === start) {
+                          lastMerged.end = end;
+                          lastMerged.ids.push(shift.id || '');
+                        } else {
+                          mergedShifts.push({
+                            positionId: shift.positionId,
+                            start,
+                            end,
+                            ids: [shift.id || '']
+                          });
+                        }
+                      });
+
+                      return mergedShifts.map(shift => {
+                        const { start, end, positionId, ids } = shift;
+                        const position = Positions.find(p => p.id === positionId);
                       const posName = position?.name || '不明';
                       const colors = getPositionColor(shift.positionId);
                       
-                      return (
-                        <div 
-                          key={shift.id || shift.timeBlock} 
-                          className="absolute top-[4px] bottom-[4px] rounded-[4px] text-[10px] sm:text-xs font-bold p-1 overflow-hidden shadow-sm flex flex-col justify-center border print-exact-colors opacity-95 hover:opacity-100 transition-opacity z-20"
-                          style={{ 
-                            ...getPositionStyle(start, end),
-                            backgroundColor: colors.bg,
-                            borderColor: colors.border,
-                            color: colors.text
-                          }}
-                          title={`${posName} (${start}-${end})`}
-                        >
-                          <div className="truncate w-full leading-tight">{posName}</div>
-                          <div className="truncate w-full opacity-70 font-medium text-[9px]">{start}-{end}</div>
-                        </div>
-                      );
-                    })}
+                        return (
+                          <div 
+                            key={ids.join('-')} 
+                            className="absolute top-[4px] bottom-[4px] rounded-[4px] text-[10px] sm:text-xs font-bold p-1 overflow-hidden shadow-sm flex flex-col justify-center border print-exact-colors opacity-95 hover:opacity-100 transition-opacity z-20 cursor-default"
+                            style={{ 
+                              ...getPositionStyle(start, end),
+                              backgroundColor: colors.bg,
+                              borderColor: colors.border,
+                              color: colors.text
+                            }}
+                            title={`${posName} (${start}-${end})`}
+                          >
+                            <div className="truncate w-full leading-tight">{posName}</div>
+                            <div className="truncate w-full opacity-70 font-medium text-[9px]">{start}-{end}</div>
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               );
