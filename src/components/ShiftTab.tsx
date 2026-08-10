@@ -7,15 +7,17 @@ interface ShiftTabProps {
   eventId: string;
 }
 
+const parseTimeStr = (t: string) => {
+  if (!t || typeof t !== 'string' || !t.includes(':')) return 0;
+  const [h, m] = t.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+};
+
 const generateTimeBlocks = (start: string, end: string, unitMins: number) => {
   if (!start || !end || !unitMins) return [];
   const blocks = [];
   try {
-    const parseTime = (t: string) => {
-      if (!t || typeof t !== 'string' || !t.includes(':')) return 0;
-      const [h, m] = t.split(':').map(Number);
-      return (h || 0) * 60 + (m || 0);
-    };
+    const parseTime = parseTimeStr;
     const formatTime = (mins: number) => {
       const h = Math.floor(mins / 60);
       const m = mins % 60;
@@ -130,6 +132,44 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
       dispatchAction('BULK_ASSIGN_SHIFTS', newAssignments);
     } else {
       alert("割り当て可能なスタッフがいませんでした");
+    }
+  };
+
+  const handleBulkAssignAll = (pos: typeof eventPositions[0]) => {
+    const cat = PositionCategories.find(c => c.id === pos.categoryId);
+    const eligibleStaff = Staff.filter(s => {
+      if (cat?.allowedRole === 'WCP' && s.role !== 'WCP') return false;
+      if (cat?.allowedRole === 'ボランティア' && s.role !== 'ボランティア') return false;
+      
+      const isAvailable = (!s.availableStartTime || s.availableStartTime <= pos.startTime) && 
+                          (!s.availableEndTime || s.availableEndTime >= pos.endTime);
+      if (!isAvailable) return false;
+      
+      const trait = StaffTraits.find(t => t.staffId === s.id && t.positionId === pos.id)?.trait;
+      if (trait === '×') return false;
+      
+      return true;
+    });
+
+    const newAssignments: Omit<Shift, 'id'>[] = [];
+    const timeBlock = `${pos.startTime}-${pos.endTime}`;
+
+    eligibleStaff.forEach((staff, index) => {
+      const isAssigned = Shifts.some(s => s.positionId === pos.id && s.staffId === staff.id);
+      if (!isAssigned) {
+        newAssignments.push({
+          positionId: pos.id,
+          timeBlock,
+          slotIndex: index,
+          staffId: staff.id
+        });
+      }
+    });
+
+    if (newAssignments.length > 0) {
+      dispatchAction('BULK_ASSIGN_SHIFTS', newAssignments);
+    } else {
+      alert('割り当て可能なスタッフがいません、または全員すでに割り当て済みです。');
     }
   };
 
@@ -304,6 +344,15 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                               設定時間: {pos.startTime}〜{pos.endTime} / 必要人数: {pos.requiredPeople === -1 ? '全員' : `${pos.requiredPeople}名`} / 備考: {pos.remarks}
                             </p>
                           </div>
+                          {pos.requiredPeople === -1 && (
+                            <button 
+                              className="btn btn-primary btn-sm flex items-center gap-2 no-print"
+                              onClick={() => handleBulkAssignAll(pos)}
+                            >
+                              <Users size={16} />
+                              全員を一括アサイン
+                            </button>
+                          )}
                         </div>
                       
                       <div className="flex flex-col p-4 gap-4">
@@ -498,7 +547,18 @@ export const ShiftTab: React.FC<ShiftTabProps> = ({ eventId }) => {
                       if (shift.staffId !== s.id) return false;
                       const [shiftStart, shiftEnd] = (shift.timeBlock || '').split('-');
                       if (!shiftStart || !shiftEnd) return false;
-                      return assignModal.startTime < shiftEnd && shiftStart < assignModal.endTime;
+                      
+                      const sStart = parseTimeStr(shiftStart);
+                      const sEnd = parseTimeStr(shiftEnd);
+                      const aStart = parseTimeStr(assignModal.startTime);
+                      const aEnd = parseTimeStr(assignModal.endTime);
+                      
+                      let buffer = 0;
+                      if (currentEvent && currentEvent.positionBufferMinutes && shift.positionId !== assignModal.positionId) {
+                        buffer = currentEvent.positionBufferMinutes;
+                      }
+
+                      return aStart < sEnd + buffer && sStart < aEnd + buffer;
                     });
                     const isAssigned = !!overlappingShift;
                     const overlappingPosition = isAssigned ? Positions.find(p => p.id === overlappingShift.positionId) : null;

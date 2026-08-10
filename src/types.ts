@@ -7,6 +7,7 @@ export interface AppEvent {
   remarks: string;
   workMinutesBeforeBreak?: number; // minutes
   breakMinutes?: number; // minutes
+  positionBufferMinutes?: number; // minutes
 }
 
 export interface PositionCategory {

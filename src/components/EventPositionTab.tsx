@@ -206,13 +206,7 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label className="flex items-center justify-between mb-2">
-                  <span className="font-bold">必要人数</span>
-                  <label className="flex items-center gap-1 cursor-pointer">
-                    <input type="checkbox" checked={posForm.requiredPeople === -1} onChange={(e) => setPosForm({...posForm, requiredPeople: e.target.checked ? -1 : 1})} />
-                    <span className="text-sm font-normal text-gray-600">全員を対象とする</span>
-                  </label>
-                </label>
+                <label className="font-bold block mb-2">必要人数</label>
                 <input 
                   type="number" 
                   min="1" 
@@ -221,16 +215,20 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                   placeholder={posForm.requiredPeople === -1 ? '全員' : ''}
                   onChange={e => setPosForm({...posForm, requiredPeople: parseInt(e.target.value) || 1})} 
                 />
+                <label className="flex items-center gap-1 cursor-pointer mt-2 whitespace-nowrap">
+                  <input type="checkbox" checked={posForm.requiredPeople === -1} onChange={(e) => setPosForm({...posForm, requiredPeople: e.target.checked ? -1 : 1, isFixed: e.target.checked ? true : posForm.isFixed})} />
+                  <span className="text-sm font-normal text-gray-600">全員を対象とする</span>
+                </label>
               </div>
               <div className="form-group">
                 <label className="font-bold block mb-2">枠の種類</label>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
-                    <input type="radio" name="posType" checked={!posForm.isFixed} onChange={() => setPosForm({...posForm, isFixed: false})} />
+                    <input type="radio" name="posType" checked={!posForm.isFixed} onChange={() => setPosForm({...posForm, isFixed: false})} disabled={posForm.requiredPeople === -1} />
                     <span className="text-sm">変動枠</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
-                    <input type="radio" name="posType" checked={posForm.isFixed} onChange={() => setPosForm({...posForm, isFixed: true})} />
+                    <input type="radio" name="posType" checked={posForm.isFixed} onChange={() => setPosForm({...posForm, isFixed: true})} disabled={posForm.requiredPeople === -1} />
                     <span className="text-sm">固定枠</span>
                   </label>
                 </div>
@@ -321,13 +319,7 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label className="flex items-center justify-between mb-2">
-                  <span className="font-bold">必要人数</span>
-                  <label className="flex items-center gap-1 cursor-pointer">
-                    <input type="checkbox" checked={editPositionModal.requiredPeople === -1} onChange={(e) => setEditPositionModal({...editPositionModal, requiredPeople: e.target.checked ? -1 : 1})} />
-                    <span className="text-sm font-normal text-gray-600">全員を対象とする</span>
-                  </label>
-                </label>
+                <label className="font-bold block mb-2">必要人数</label>
                 <input 
                   type="number" 
                   min="1" 
@@ -336,16 +328,20 @@ export const EventPositionTab: React.FC<EventPositionTabProps> = ({ eventId }) =
                   placeholder={editPositionModal.requiredPeople === -1 ? '全員' : ''}
                   onChange={e => setEditPositionModal({...editPositionModal, requiredPeople: parseInt(e.target.value) || 1})} 
                 />
+                <label className="flex items-center gap-1 cursor-pointer mt-2 whitespace-nowrap">
+                  <input type="checkbox" checked={editPositionModal.requiredPeople === -1} onChange={(e) => setEditPositionModal({...editPositionModal, requiredPeople: e.target.checked ? -1 : 1, isFixed: e.target.checked ? true : editPositionModal.isFixed})} />
+                  <span className="text-sm font-normal text-gray-600">全員を対象とする</span>
+                </label>
               </div>
               <div className="form-group">
                 <label className="font-bold block mb-2">枠の種類</label>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
-                    <input type="radio" name="editPosType" checked={!editPositionModal.isFixed} onChange={() => setEditPositionModal({...editPositionModal, isFixed: false})} />
+                    <input type="radio" name="editPosType" checked={!editPositionModal.isFixed} onChange={() => setEditPositionModal({...editPositionModal, isFixed: false})} disabled={editPositionModal.requiredPeople === -1} />
                     <span className="text-sm">変動枠</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
-                    <input type="radio" name="editPosType" checked={editPositionModal.isFixed} onChange={() => setEditPositionModal({...editPositionModal, isFixed: true})} />
+                    <input type="radio" name="editPosType" checked={editPositionModal.isFixed} onChange={() => setEditPositionModal({...editPositionModal, isFixed: true})} disabled={editPositionModal.requiredPeople === -1} />
                     <span className="text-sm">固定枠</span>
                   </label>
                 </div>

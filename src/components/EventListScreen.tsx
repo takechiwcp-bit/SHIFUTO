@@ -15,8 +15,9 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
   const [newEventRemarks, setNewEventRemarks] = useState('');
   const [newEventWorkMinutes, setNewEventWorkMinutes] = useState('240');
   const [newEventBreakMinutes, setNewEventBreakMinutes] = useState('60');
+  const [newEventBufferMinutes, setNewEventBufferMinutes] = useState('0');
 
-  const [editEventModal, setEditEventModal] = useState<{ id: string; name: string; date: string; startTime: string; endTime: string; remarks: string; workMinutesBeforeBreak?: number; breakMinutes?: number } | null>(null);
+  const [editEventModal, setEditEventModal] = useState<{ id: string; name: string; date: string; startTime: string; endTime: string; remarks: string; workMinutesBeforeBreak?: number; breakMinutes?: number; positionBufferMinutes?: number } | null>(null);
 
   const handleCreateEvent = async () => {
     if (!newEventName || !newEventDate) return;
@@ -31,7 +32,8 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
       endTime: newEventEndTime,
       remarks: newEventRemarks,
       workMinutesBeforeBreak: parseInt(newEventWorkMinutes) || 0,
-      breakMinutes: parseInt(newEventBreakMinutes) || 0
+      breakMinutes: parseInt(newEventBreakMinutes) || 0,
+      positionBufferMinutes: parseInt(newEventBufferMinutes) || 0
     });
     
     setNewEventName('');
@@ -41,6 +43,7 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
     setNewEventRemarks('');
     setNewEventWorkMinutes('240');
     setNewEventBreakMinutes('60');
+    setNewEventBufferMinutes('0');
     
     // After creating, automatically enter that event
     onSelectEvent(newId);
@@ -78,8 +81,12 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
           </div>
           <div className="form-group mb-0">
             <label>必要な休憩 (分)</label>
-            <input type="number" min="0" value={newEventBreakMinutes} onChange={e => setNewEventBreakMinutes(e.target.value)} placeholder="例: 60" />
+            <input type="number" min="0" value={newEventBreakMinutes} onChange={e => setNewEventBreakMinutes(e.target.value)} />
           </div>
+        </div>
+        <div className="form-group">
+          <label>ポジション間の移動時間・バッファ (分)</label>
+          <input type="number" min="0" value={newEventBufferMinutes} onChange={e => setNewEventBufferMinutes(e.target.value)} />
         </div>
         <div className="form-group">
           <label>備考 (任意)</label>
@@ -126,7 +133,10 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
                           date: ev.date,
                           startTime: ev.startTime || '09:00',
                           endTime: ev.endTime || '18:00',
-                          remarks: ev.remarks || ''
+                          remarks: ev.remarks || '',
+                          workMinutesBeforeBreak: ev.workMinutesBeforeBreak || 0,
+                          breakMinutes: ev.breakMinutes || 0,
+                          positionBufferMinutes: ev.positionBufferMinutes || 0
                         });
                       }}
                     >
@@ -190,6 +200,10 @@ export const EventListScreen: React.FC<EventListScreenProps> = ({ onSelectEvent 
                 <label>必要な休憩 (分)</label>
                 <input type="number" min="0" value={editEventModal.breakMinutes} onChange={e => setEditEventModal({...editEventModal, breakMinutes: parseInt(e.target.value) || 0})} />
               </div>
+            </div>
+            <div className="form-group">
+              <label>ポジション間の移動時間・バッファ (分)</label>
+              <input type="number" min="0" value={editEventModal.positionBufferMinutes} onChange={e => setEditEventModal({...editEventModal, positionBufferMinutes: parseInt(e.target.value) || 0})} />
             </div>
             <div className="form-group">
               <label>備考</label>
