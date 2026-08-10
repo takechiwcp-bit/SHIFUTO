@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store';
-import { User, Trash2, Pencil } from 'lucide-react';
+import { User, Trash2, Pencil, Search } from 'lucide-react';
 
 interface StaffTabProps {
   eventId: string;
@@ -23,6 +23,8 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
   const [newStaffEndTime, setNewStaffEndTime] = useState(defaultEndTime);
   const [newStaffRemarks, setNewStaffRemarks] = useState('');
   const [newStaffRole, setNewStaffRole] = useState<'WCP' | 'ボランティア'>('ボランティア');
+  
+  const [searchQuery, setSearchQuery] = useState('');
   
   useEffect(() => {
     setNewStaffStartTime(defaultStartTime);
@@ -129,9 +131,21 @@ export const StaffTab: React.FC<StaffTabProps> = ({ eventId }) => {
         </div>
 
         <div className="mt-6">
-          <h3 className="mb-2 text-sm text-gray-500">スタッフ一覧 (クリックで詳細)</h3>
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm text-gray-500">スタッフ一覧 (クリックで詳細)</h3>
+          </div>
+          <div className="mb-3 relative">
+            <input 
+              type="text" 
+              placeholder="名前で検索..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-md text-sm bg-gray-50 focus:bg-white focus:border-primary transition-all outline-none"
+            />
+            <Search className="absolute left-2.5 top-2 text-gray-400" size={14} />
+          </div>
           <div className="flex flex-col gap-2 max-h-96 overflow-y-auto pr-2">
-            {Staff.map(s => (
+            {Staff.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map(s => (
               <div 
                 key={s.id}
                 className={`p-3 border rounded-lg transition-colors cursor-pointer ${selectedStaffId === s.id ? 'border-primary shadow-sm bg-indigo-50/30' : 'bg-white hover:border-gray-300'}`}

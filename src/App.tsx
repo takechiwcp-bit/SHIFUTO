@@ -10,14 +10,54 @@ import { Calendar, Users, Grid, ChevronLeft, Table } from 'lucide-react';
 function App() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'event' | 'staff' | 'shift' | 'shiftTable'>('event');
+  const [isViewOnly, setIsViewOnly] = useState(false);
   
   const { Events, error, isLoading, setActiveEventId } = useStore();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewOnlyParam = params.get('viewOnly');
+    const eventIdParam = params.get('eventId');
+
+    if (viewOnlyParam === 'true' && eventIdParam) {
+      setIsViewOnly(true);
+      setSelectedEventId(eventIdParam);
+      setActiveEventId(eventIdParam);
+      setActiveTab('shiftTable');
+    }
+
     startPolling();
   }, []);
 
   const selectedEvent = selectedEventId ? Events.find(e => e.id === selectedEventId) : null;
+
+  if (isViewOnly) {
+    return (
+      <div className="container min-h-screen bg-gray-50 flex flex-col pt-4 pb-10">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 fade-in">
+            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-500 font-medium">シフト表を読み込んでいます...</p>
+          </div>
+        ) : (
+          <div className="fade-in flex-1">
+             <div className="mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+               <h2 className="text-2xl font-bold text-gray-800">
+                 {selectedEvent?.name} <span className="text-sm font-normal text-gray-500 ml-2">
+                   {selectedEvent?.date} 
+                   {(selectedEvent?.startTime && selectedEvent?.endTime) && ` (${selectedEvent.startTime} - ${selectedEvent.endTime})`}
+                 </span>
+               </h2>
+               <div className="text-sm text-gray-400">Shift Manager Pro</div>
+             </div>
+             <main>
+               <ShiftTableTab eventId={selectedEventId!} isViewOnly={true} />
+             </main>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="container">

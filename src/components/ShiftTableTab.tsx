@@ -1,15 +1,16 @@
 import React, { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { Download } from 'lucide-react';
+import { Download, Link as LinkIcon, Check } from 'lucide-react';
 import { TimelineView } from './TimelineView';
 import { useStore } from '../store';
 
 interface ShiftTableTabProps {
   eventId: string;
+  isViewOnly?: boolean;
 }
 
-export const ShiftTableTab: React.FC<ShiftTableTabProps> = ({ eventId }) => {
+export const ShiftTableTab: React.FC<ShiftTableTabProps> = ({ eventId, isViewOnly = false }) => {
   const { Events, PositionCategories, Positions, Shifts, Staff } = useStore();
   const currentEvent = Events.find(e => e.id === eventId);
   const eventCategories = PositionCategories.filter(c => c.eventId === eventId);
@@ -18,6 +19,16 @@ export const ShiftTableTab: React.FC<ShiftTableTabProps> = ({ eventId }) => {
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyLink = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('eventId', eventId);
+    url.searchParams.set('viewOnly', 'true');
+    navigator.clipboard.writeText(url.toString());
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   const handleDownloadPDF = async () => {
     if (!timelineRef.current) return;
@@ -100,14 +111,22 @@ export const ShiftTableTab: React.FC<ShiftTableTabProps> = ({ eventId }) => {
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100 no-print">
         <div>
-          <h2 className="text-lg font-bold text-gray-800">シフト表（完成版）</h2>
-          <p className="text-sm text-gray-500 mt-1">作成したシフトのタイムライン表示と、PDF・CSV形式でのダウンロードが可能です。</p>
+          <h2 className="text-lg font-bold text-gray-800">{isViewOnly ? 'シフト表' : 'シフト表（完成版）'}</h2>
+          {!isViewOnly && <p className="text-sm text-gray-500 mt-1">作成したシフトのタイムライン表示と、PDF・CSV形式でのダウンロードが可能です。</p>}
         </div>
-        <div className="flex gap-3">
-          <button 
-            className="btn bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center gap-2"
-            onClick={exportToCSV}
-          >
+        {!isViewOnly && (
+          <div className="flex gap-3">
+            <button 
+              className="btn bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 flex items-center gap-2"
+              onClick={handleCopyLink}
+            >
+              {copiedLink ? <Check size={18} /> : <LinkIcon size={18} />}
+              {copiedLink ? 'コピーしました！' : '共有リンクをコピー'}
+            </button>
+            <button 
+              className="btn bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center gap-2"
+              onClick={exportToCSV}
+            >
             <Download size={18} />
             CSVダウンロード
           </button>
@@ -120,6 +139,7 @@ export const ShiftTableTab: React.FC<ShiftTableTabProps> = ({ eventId }) => {
             {isGeneratingPDF ? 'PDF生成中...' : 'PDFでダウンロード'}
           </button>
         </div>
+        )}
       </div>
 
       <div ref={timelineRef} className="bg-white rounded-xl">
